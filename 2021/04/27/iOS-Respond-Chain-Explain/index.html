@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8">
   
-  <title>iOS 响应链详解 | Hexo</title>
+  <title>iOS 响应链详解 | </title>
 
   
-  <meta name="author" content="John Doe">
+  <meta name="author" content="Rick Li">
   
 
   
@@ -34,14 +34,14 @@
 
   <meta property="og:title" content="iOS 响应链详解"/>
 
-  <meta property="og:site_name" content="Hexo"/>
+  <meta property="og:site_name" content=""/>
 
   
   <meta property="og:image" content="/favicon.ico"/>
   
 
   <link href="/favicon.ico" rel="icon">
-  <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
+  <link rel="alternate" href="/atom.xml" title="" type="application/atom+xml">
   <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
 <meta name="generator" content="Hexo 5.4.0"></head>
 
@@ -53,7 +53,7 @@
     <header>
   <div class="site-branding">
     <h1 class="site-title">
-      <a href="/">Hexo</a>
+      <a href="/"></a>
     </h1>
     <p class="site-description"></p>
   </div>
@@ -75,7 +75,7 @@
 
   <div class="article-top-meta">
     <span class="posted-on">
-      <a href="/2021/04/27/iOS-响应链详解/" rel="bookmark">
+      <a href="/2021/04/27/iOS-Respond-Chain-Explain/" rel="bookmark">
         <time class="entry-date published" datetime="2021-04-27T03:10:27.000Z">
           2021-04-27
         </time>
@@ -95,7 +95,7 @@
 </li>
 <li><p>远程控制事件</p>
 </li>
-<li><p>加速计事件<br><img src="https://upload-images.jianshu.io/upload_images/2148183-36cb8512c2ca8d04.png"></p>
+<li><p>加速计事件<br><img src="/2021/04/27/iOS-Respond-Chain-Explain/event_respond_type.png" alt="event_respond_type"></p>
 <blockquote>
 <p>三种事件<br>我们暂时先只关注触摸事件。</p>
 </blockquote>
@@ -114,7 +114,7 @@
 <p>需要注意的是：以上四个方法是由系统自动调用的，所以可以通过重写该方法来处理一些事件。</p>
 <ul>
 <li>如果两根手指同时触摸一个view，那么view只会调用一次touchesBegan:withEvent:方法，touches参数中装着2个UITouch对象</li>
-<li>如果这两根手指一前一后分开触摸同一个view，那么view会分别调用2次touchesBegan:withEvent:方法，并且每次调用时的touches参数中只包含一个UITouch对象<br>重写以上四个方法，如果是处理UIView的触摸事件。必须要自定义UIView子类继承自UIView。因为苹果不开源，没有把UIView的.m文件提 供给我们。我们只能通过子类继承父类，重写子类方法的方式处理UIView的触摸事件（注意：我说的是UIView触摸事件而不是说的 UIViewController的触摸事件）。<br>如果是处理UIViewController的触摸事件，那么在控制器的.m文件中直接重写那四个方法即可！<h4 id="事件的产生"><a href="#事件的产生" class="headerlink" title="事件的产生"></a>事件的产生</h4>对于触摸事件，首先要找到能够响应该事件的对象，iOS是用hit_testing来找到哪个视图被触摸了，也就是以keyWindow为起点，hit-test view为终点，逐级调用hitTest:withEvent<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">st&#x3D;&gt;start: 用户点击屏幕</span><br><span class="line">i&#x3D;&gt;inputoutput: UIApplication </span><br><span class="line">i2&#x3D;&gt;inputoutput: UIWindow </span><br><span class="line">i3&#x3D;&gt;inputoutput: hitTest_withEvent </span><br><span class="line">i4&#x3D;&gt;inputoutput: pointInside_withEvent </span><br><span class="line">i5&#x3D;&gt;inputoutput: subviews</span><br><span class="line">op&#x3D;&gt;operation: 遍历subviews循环操作</span><br><span class="line">cond&#x3D;&gt;condition: 是否响应hitTest Yes or No?</span><br><span class="line">e&#x3D;&gt;end: 最终响应的view</span><br><span class="line"></span><br><span class="line">st-&gt;i-&gt;i2-&gt;i3-&gt;i4-&gt;i5-&gt;op-&gt;cond</span><br><span class="line"></span><br><span class="line">cond(yes)-&gt;e</span><br><span class="line">cond(no)-&gt;op</span><br></pre></td></tr></table></figure></li>
+<li>如果这两根手指一前一后分开触摸同一个view，那么view会分别调用2次touchesBegan:withEvent:方法，并且每次调用时的touches参数中只包含一个UITouch对象<br>重写以上四个方法，如果是处理UIView的触摸事件。必须要自定义UIView子类继承自UIView。因为苹果不开源，没有把UIView的.m文件提 供给我们。我们只能通过子类继承父类，重写子类方法的方式处理UIView的触摸事件（注意：我说的是UIView触摸事件而不是说的 UIViewController的触摸事件）。<br>如果是处理UIViewController的触摸事件，那么在控制器的.m文件中直接重写那四个方法即可！<h4 id="事件的产生"><a href="#事件的产生" class="headerlink" title="事件的产生"></a>事件的产生</h4>对于触摸事件，首先要找到能够响应该事件的对象，iOS是用hit_testing来找到哪个视图被触摸了，也就是以keyWindow为起点，hit-test view为终点，逐级调用hitTest:withEvent<br><img src="/2021/04/27/iOS-Respond-Chain-Explain/response_chain.png" alt="response_chain"><img src="/2021/04/27/iOS-Respond-Chain-Explain/response_chain.png" class title="response_chain"></li>
 <li>发生触摸事件后，系统会将该事件加入到一个由UIApplication管理的事件队列中,为什么是队列而不是栈？因为队列的特点是FIFO，即先进先出，先产生的事件先处理才符合常理，所以把事件添加到队列。</li>
 <li>UIApplication会从事件队列中取出最前面的事件，并将事件分发下去以便处理，通常，先发送事件给应用程序的主窗口（keyWindow）。</li>
 <li>主窗口会在视图层次结构中找到一个最合适的视图来处理触摸事件，这也是整个事件处理过程的第一步。<br>找到合适的视图控件后，就会调用视图控件的touches方法来作具体的事件处理。<br>所以点击事件的响应是，顶部的view 传到父view，一直到父类上面<br>hitTest:withEvent方法的处理流程：</li>
@@ -187,7 +187,7 @@
     Theme by <a href="https://github.com/CodeDaraW/Hacker" target="_blank">Hacker</a>
     </br>
     
-    &copy; 2021 John Doe
+    &copy; 2021 Rick Li
     
   </p>
 </footer>
