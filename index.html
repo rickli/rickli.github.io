@@ -55,6 +55,219 @@
 
   
     
+    <h3 class="article-title"><a href="/2021/05/01/Mach-O-Executable/"><span>Mach-O Executable</span></a></h3>
+    
+  
+
+  <div class="article-top-meta">
+    <span class="posted-on">
+      <a href="/2021/05/01/Mach-O-Executable/" rel="bookmark">
+        <time class="entry-date published" datetime="2021-05-01T04:09:36.000Z">
+          2021-05-01
+        </time>
+      </a>
+    </span>
+  </div>
+
+
+  
+
+  <div class="article-content">
+    <div class="entry">
+      
+        <p>我想谈谈这个神秘的词Mach-O…<br>它是什么？<br>它是如何工作的？</p>
+<p>为了解决所有这些问题，我们必须亲自动手深入挖掘…</p>
+<p>当我们使用Xcode构建APP时，很多事情同时发生。 其中之一是将所有源代码转换为可执行文件。 该可执行文件包含将在CPU，iOS设备上的ARM处理器或Mac上的英特尔处理器上运行的字节码。</p>
+<p>该可执行文件称为Mach-O。</p>
+<h2 id="Mach-O-格式"><a href="#Mach-O-格式" class="headerlink" title="Mach-O 格式"></a>Mach-O 格式</h2><p>Mach-O是字节的二进制流，被分成有意义的数据块。 这些块包含有关元数据的信息，例如字节顺序，CPU类型，块大小等。</p>
+<p>Mach-O有多种类型，最典型的是您会看到这些：</p>
+<ul>
+<li>可执行文件 主APP二进制文件，例如Example.app/Example</li>
+<li>Dylib 动态库，例如libSwiftCore.dylib<br>因此，Mach-O文件分为几个部分，看起来像这样<br><img src="/2021/05/01/Mach-O-Executable/mach_binary.png" alt="mach binary"><br>但在深入探讨分段之前，我们先来看看其他内容</li>
+</ul>
+<h3 id="Mach-O-Header"><a href="#Mach-O-Header" class="headerlink" title="Mach-O Header"></a>Mach-O Header</h3><p><img src="/2021/05/01/Mach-O-Executable/Mach-O_header.png" alt="Mach-O header"><br>每个Mach-O文件都以定义文件结构的头结构开头。 它还包含有关文件类型和目标体系结构（armv7，armv7s，i386等）的信息。</p>
+<p>头文件结构的正下方是一堆加载命令，这些命令有助于文件的布局和链接。 另外，加载命令可以指定</p>
+<ul>
+<li>文件在虚拟内存中的初始布局</li>
+<li>Section名称和地址</li>
+<li>要加载的dylib</li>
+<li>“main”函数地址</li>
+<li>代码签名<br>这就是完整的标题的样子！<br><img src="/2021/05/01/Mach-O-Executable/complete_header.png" alt="Mach-O complete header"><br>如您所见，Mach-O头文件由一堆加载命令组成，这些命令定义了各节的地址，主函数以及要加载的从属二进制文件。</li>
+</ul>
+<p>上面提到的地址实际上与加载Mach-O的内存地址有偏差。 这样做是因为每次启动APP时，都会使用一种称为“自动空间布局随机化”的精巧技术或我们亲切地称为ASLR的启动技术来对起始内存地址进行随机化。</p>
+<p>这意味着您的APP进程启动时，您不知道它将从哪个地址开始启动。<br>让我们想象一下它的含义，假设您有一个全局变量，它占用了RAM中的某些内存地址，但是由于您不知道进程从何处开始，因此您可能无法确定该全局变量的内存地址！</p>
+<p>您可能已经猜到，这样做是出于安全目的，否则，如果每次启动时所有地址都相同，那么破解二进制文件将变得非常容易！</p>
+<h3 id="Segments"><a href="#Segments" class="headerlink" title="Segments"></a>Segments</h3><p>让我们看一下Mach-O文件的各个部分</p>
+<h4 id="PAGEZERO"><a href="#PAGEZERO" class="headerlink" title="__PAGEZERO"></a>__PAGEZERO</h4><p>这是可执行文件的第一部分，内部没有数据，因此不占用文件空间。 该段充满零以捕获NULL指针取消引用。 您可能已经遇到了EXC_BAD_ACCESS崩溃，这恰恰是因为代码中的某些内容试图从此处访问数据，而这是不允许的。<br>顺便说一句，此段可能是隐藏恶意代码的好地方😉</p>
+<h4 id="TEXT"><a href="#TEXT" class="headerlink" title="__TEXT"></a>__TEXT</h4><p>该段包含可执行代码和只读数据。 将该段设置为只读，以允许在将段映射到内存时共享该段。 这主要与框架，bundles和共享库一起使用。</p>
+<p>并且，由于__TEXT段是只读的，因此不需要将任何更改保存回磁盘。 如果内核需要释放内存，它将仅删除__TEXT页面并在需要时重新读取它们。</p>
+<p>这就是iOS和OSX如此积极地缓存其动态库的原因。</p>
+<h4 id="DATA"><a href="#DATA" class="headerlink" title="__DATA"></a>__DATA</h4><p>该段包含可写数据（例如，全局变量，静态变量等），并且由于可写，因此逻辑上为与该库链接的每个进程复制框架或其他共享库的__DATA段。</p>
+<p>如果您有使用Swift的经验，那么您必须熟悉写时复制，这实际上意味着在引用的内容进行编辑之前，不要创建副本。 同样，当复制__DATA段时，直到某个进程对其进行修改后，该进程才真正接收到它自己的页面私有副本。</p>
+<h4 id="OBJC"><a href="#OBJC" class="headerlink" title="__OBJC"></a>__OBJC</h4><p>这是一个可选段，包含由Objective-C语言运行时支持库使用的数据。</p>
+<h4 id="IMPORT"><a href="#IMPORT" class="headerlink" title="__IMPORT"></a>__IMPORT</h4><p>这也是一个可选段，包含符号存记录和指向可执行文件中未定义的符号的非惰性指针。 仅针对IA-32体系结构的可执行文件生成此段。</p>
+<h4 id="LINKEDIT"><a href="#LINKEDIT" class="headerlink" title="__LINKEDIT"></a>__LINKEDIT</h4><p>该段包含链接器（链接编辑器）的原始数据，例如符号和字符串表，压缩的动态链接信息，代码签名信息以及间接符号表，所有这些数据均由装入命令指定的区域占据。</p>
+<p>因此，既然我们已经了解了各个部分，那么让我们尝试着眼于大局，看看它们如何融合在一起。</p>
+<h3 id="全局图—-DYLD"><a href="#全局图—-DYLD" class="headerlink" title="全局图— DYLD"></a>全局图— DYLD</h3><p>直到现在我们知道</p>
+<ul>
+<li>1、如何生成Mach-O文件，并使用其加载命令以各种方式链接依赖项。</li>
+<li>2、加载命令用于映射内存命令中的段。</li>
+<li>3、文件的执行从LC_MAIN开始<br>好吧，这仅仅是信息，而该信息需要大脑进行处理。这个大脑叫做Dyld！</li>
+</ul>
+<p>当您通过点击APP图标启动APP时，而不是启动您的APP，内核会启动dyld！<br>我知道，对吧！ 这个家伙在这里很重要。<br>内核实际上将在某些随机地址空间加载dyld，并且内核本身将具有自己的__TEXT段，__ DATA段……好了，您就知道了。<br><img src="/2021/05/01/Mach-O-Executable/dyld_loaded_in_RAM.png" alt="dyld loaded in RAM"><br>dyld的工作主要是为我们加载和设置所有依赖的dylib。</p>
+<h4 id="加载-dylibs"><a href="#加载-dylibs" class="headerlink" title="加载 dylibs"></a>加载 dylibs</h4><p>dyld在此处读取Mach-O标头，以查找有关从属dylib的信息。 然后，它在文件系统上找到该库文件并对其进行解析。</p>
+<p>此过程是递归完成的，因为dylib A可以依赖dylib B，而dylib B可以依赖dylib C，因此它必须解析整个依赖关系图，最后将所有这些dylib的段映射到原始Mach-O头文件中。</p>
+<p>而且，整个处理可能看起来像这样。<br><img src="/2021/05/01/Mach-O-Executable/Multiple_dylibs_loaded.png" alt="Multiple dylibs loaded"><br>现在，请记住我们讨论过ASLR，以及如何不知道将哪个地址分配给APP中的所有变量。  dyld必须使用以下技术来解决此问题。</p>
+<h4 id="Rebasing"><a href="#Rebasing" class="headerlink" title="Rebasing"></a>Rebasing</h4><p>__LINKEDIT部分包含所有需要移动的指针的位置。  Dyld将遍历所有这些指针，并根据您APP的起始地址对其进行移位。</p>
+<p>请注意，要执行此操作，我们必须读取和写入数据页，从而导致这些页变脏，并且需要在写入时进行复制。 这就是为什么Rebasing在IO中非常昂贵的原因。</p>
+<h4 id="Binding"><a href="#Binding" class="headerlink" title="Binding"></a>Binding</h4><p>对其他dylib函数的引用是使用绑定固定的，例如NSLog，malloc等。</p>
+<p>dyld加载依赖库后，需要搜索符号表并找到这些符号的实现。<br>因此，二进制文件中实际上存在一个名为<code>_NSLog</code>的字符串，该字符串尚未解析，而dyld要做的是查找符号表，并用相关库中这些函数的地址填充该表。</p>
+<p>这在计算上很复杂并且很昂贵</p>
+<h4 id="Objc-Runtime"><a href="#Objc-Runtime" class="headerlink" title="Objc Runtime"></a>Objc Runtime</h4><p>所有Objc类定义都需要注册，为什么？ 因为您可以从调用<code>NSClassFromString(_:)</code>方法的字符串构造Objc类。</p>
+<p>因此，dyld必须先构建此表，然后才能启动APP。</p>
+<p>在类别中添加方法列表-这意味着，如果您已经在UIView上创建了一个类别并添加了许多新函数，则这些新函数将被添加到UIView的方法列表中。</p>
+<p>它还可以确保<a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/11051528/understanding-uniqueness-of-selectors-in-objective-c/11052795#11052795">选择器是唯一</a>的。</p>
+<h4 id="Run-Initializers"><a href="#Run-Initializers" class="headerlink" title="Run Initializers"></a>Run Initializers</h4><ul>
+<li>此时将调用Objc <code>+ load</code>方法</li>
+<li>C ++静态初始化程序<br>这是以自下而上的方式发生的，因此基本上将首先初始化从属库。<br>哇！ 完成所有这些操作之后，最后，您的<code>main()</code>将执行。<br>而且，这就是难以捉摸的Mach-O文件背后的故事。<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3></li>
+<li>1、二进制文件使用带有__TEXT，__ DATA和__LINKEDIT段的Mach-O格式。</li>
+<li>2、Dyld需要解析并加载所有动态库依赖项。</li>
+<li>3、Dyld需要修复内部和外部的所有指针（变基，绑定，设置运行时）。</li>
+<li>4、运行静态初始化程序和+ load方法。</li>
+<li>5、然后<code>main()</code><h3 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h3></li>
+<li>1、Dyld在您的APP启动之前运行。</li>
+<li>2、避免使用+ load方法，它是已弃用的API，在<code>main()</code>增加APP启动时间之前调用。</li>
+<li>3、对于App库，由于dyld必须完成每个dylib的所有解析，加载和修复工作，因此dylib将招致大量启动开销。 请改用静态库。</li>
+</ul>
+
+      
+    </div>
+
+  </div>
+
+  <div class="article-footer">
+    <div class="article-meta pull-left">
+
+    
+
+    
+    
+
+    <span class="post-tags">
+      <i class="icon-tags"></i>
+        <a href="/tags/iOS/">iOS</a>
+    </span>
+    
+
+    </div>
+
+    
+  </div>
+</article>
+
+
+
+  <article>
+
+  
+    
+    <h3 class="article-title"><a href="/2021/05/01/iOS-APP-Launch-Explain/"><span>iOS APP 启动详解</span></a></h3>
+    
+  
+
+  <div class="article-top-meta">
+    <span class="posted-on">
+      <a href="/2021/05/01/iOS-APP-Launch-Explain/" rel="bookmark">
+        <time class="entry-date published" datetime="2021-05-01T03:03:47.000Z">
+          2021-05-01
+        </time>
+      </a>
+    </span>
+  </div>
+
+
+  
+
+  <div class="article-content">
+    <div class="entry">
+      
+        <p>等待启动是任何APP提供的第一个用户体验。 APP的启动屏幕后面可能会发生很多事情，当然，它应该可以立即使用。 精美的动画只能吸引用户，最终，他们只是想把事情做好！</p>
+<p>而且，由于一个APP一天可以启动N次，因此务必要注意该指标。 从用户点击您的APP图标到在屏幕上绘制第一个视图之间经过的所有时间都有助于您感知到APP的启动时间。</p>
+<p>在讨论影响启动时间的因素之前，让我们先了解一下各种启动。</p>
+<h4 id="启动类型"><a href="#启动类型" class="headerlink" title="启动类型"></a>启动类型</h4><ul>
+<li>1、冷启动<br>这意味着系统内核缓冲区缓存中不存在App进程。 通常是在首次启动该APP时或在重新启动设备并清除内核缓存时发生的。 这种启动花费了最长的时间，因此应考虑进行启动时间分析。</li>
+<li>2、暖启动<br>这是一种启动类型，其中APP进程和数据存在于系统的内存中，然后被带到前台。 这类似于杀死该APP并重新启动。</li>
+<li>3、热启动<br>当APP从后台或挂起状态进入前台时，就会发生这种启动。</li>
+</ul>
+<p>现在，我们知道了启动类型，我们需要讨论两种启动时间。</p>
+<h4 id="main-之前的启动-时间"><a href="#main-之前的启动-时间" class="headerlink" title="main()之前的启动 时间"></a>main()之前的启动 时间</h4><p>这是内核用于加载APP（<a href="http://rickli.github.io/2021/05/01/Mach-O-Executable/">Mach-O可执行文件</a>）的时间。 您可以在此处阅读有关<a href="http://rickli.github.io/2021/05/01/Mach-O-Executable/">加载顺序</a>的更多信息。</p>
+<blockquote>
+<p>如果您是Objective-C开发人员，则可能已经看过APP的main（），但是即使您使用Swift编写代码，该方法仍然存在，但看不到它。</p>
+</blockquote>
+<p>直到控件到达您APP的main（）函数为止的所有时间都计入主时间之前。</p>
+<p>而且，由于所有这些都是在控件到达您的APP之前发生的，因此这段时间很难控制。 好吧，不是真的，但是我们将讨论这一点。</p>
+<p>Dyld有一个内置的机制来衡量这一点，您所要做的就是编辑您的APP方案，并将环境变量DYLD_PRINT_STATISTICS添加为1，如下所示<br><img src="/2021/05/01/iOS-APP-Launch-Explain/DYLD_PRINT_STATISTICS.png" alt="scheme editor"><br>您还可以将构建配置设置为“发布”模式，最好在iPhone而不是模拟器上运行它。 完成配置并运行APP后，您会在控制台中看到类似的内容。<br><img src="/2021/05/01/iOS-APP-Launch-Explain/Pre_main_launch_metrics_in_console.png" alt="Pre-main launch metrics in console
+"></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">dylib loading time: 378.82 milliseconds (52.2%)</span><br><span class="line">    rebase/binding time: 126687488.8 seconds (397295283.8%)</span><br><span class="line">        ObjC setup time: 115.89 milliseconds (15.9%)</span><br><span class="line">       initializer time: 335.12 milliseconds (46.2%)</span><br><span class="line">       slowest intializers :</span><br><span class="line">         libSystem.B.dylib :   5.33 milliseconds (0.7%)</span><br><span class="line">libMainThreadChecker.dylib : 301.22 milliseconds (41.5%)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>从上面我们可以知道有许多因素会影响启动时间，例如dylib加载时间，rebase/binding， ObjC 设置， 初始化时间，libSystem.B.dylib，以及libMainThreadChecker.dylib等。</p>
+<p>首先，我们需要研究第二种启动时间。</p>
+<h4 id="main-之后的启动时间"><a href="#main-之后的启动时间" class="headerlink" title="main()之后的启动时间"></a>main()之后的启动时间</h4><p>这是从启动APP的<a target="_blank" rel="noopener" href="https://developer.apple.com/documentation/uikit/uiapplicationdelegate/1623032-application">app:willFinishLaunchingWithOptions：</a>和<a target="_blank" rel="noopener" href="https://developer.apple.com/documentation/uikit/uiapplicationdelegate/1622921-application">app:didFinishLaunchingWithOptions</a>到您的AppDelegate一直到第一个ViewControllers绘图周期结束为止的时间，即直到调用viewDidLoad和viewDidLayoutSubviews为止。</p>
+<p>您可能已经猜到了，要测量该时间，您必须测量从willFinishLaunching方法到第一个ViewController的viewDidLayoutSubviews（通常是APP的预排/主屏幕）之间的时间。</p>
+<p>并且，我们还将讨论影响启动时间的因素。</p>
+<p>因此，总启动时间的最终方程为</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pre-main() 时间 + post-main() 时间 = App 总的启动时间</span><br></pre></td></tr></table></figure>
+<h4 id="影响启动时间性能的因素"><a href="#影响启动时间性能的因素" class="headerlink" title="影响启动时间性能的因素"></a>影响启动时间性能的因素</h4><p>有几个因素会影响您的启动时间效果</p>
+<h5 id="动态库加载时间"><a href="#动态库加载时间" class="headerlink" title="动态库加载时间"></a>动态库加载时间</h5><p>动态加载程序（dyld）加载APP的可执行文件，并检查可执行文件中的加载命令，以查找App所需的框架和动态库。 添加到您的APP的任何动态框架都有助于这一时期。</p>
+<p>因此，限制在Xcode的“Linked Frameworks and Libraries”设置嵌入的框架数量可以帮助减少启动时间。</p>
+<p>您可以在此处阅读有关<a href="http://rickli.github.io/2021/05/01/Mach-O-Executable/">dyld</a>的更多信息。</p>
+<p>解决此问题的另一种方法是使用静态框架，它们是在编译时内置于APP可执行文件中的，因此dylib不必完成上述所有工作。<br><img src="/2021/05/01/iOS-APP-Launch-Explain/swift_framework.png" alt="swift_framework"><br>通过这样做，您可以节省大量的pre-main（）启动时间。<br><img src="/2021/05/01/iOS-APP-Launch-Explain/static_library.png" alt="static_library"><br>尽管在iOS 13中，dyld3包含在iOSAPP中，这是一个很大的改进，因为它将使iOSAPP的启动速度提高2倍。 但是，仍然无法使用静态框架。</p>
+<h5 id="Static-初始化"><a href="#Static-初始化" class="headerlink" title="Static 初始化"></a>Static 初始化</h5><p>APP中的某些代码必须在iOS运行您的APP的main（）函数之前运行，这会增加启动时间。 此代码包括</p>
+<ul>
+<li>C / C ++静态初始化程序-通常，您不会在APP中找到类似的东西，但是如果您愿意，我希望对它有所了解。 任何定义为__attribute__((constructor)) 的函数都是C中的静态构造函数，它们的特长是在执行main（）之前调用它们！ 你可以在<a target="_blank" rel="noopener" href="https://www.geeksforgeeks.org/__attribute__constructor-__attribute__destructor-syntaxes-c/">这里</a>读更多关于它的内容。</li>
+<li>在OC类或Category中声明的 <code>+load</code>方法。 如上图所示，它们在<code>main()</code>之前调用，并增加了ObjC的设置时间。 此外，不建议使用此方法，而应改用<code>+ initialize</code>方法。</li>
+<li>链接到APP可执行文件或Mach-O的<code>__DATA,__mod_init_func</code>段的任何函数。 这些函数通常位于__DATA段的__mod_init_func段内。</li>
+</ul>
+<p>因此，根据一般经验，将代码移至APP生命周期的后期，即APP启动完成后但需要工作结果之前。</p>
+<p>您可以在Xcode中使用静态初始化程序工具来查找您的APP花了多少时间来运行静态初始化程序。</p>
+<h4 id="UIKit生命周期方法"><a href="#UIKit生命周期方法" class="headerlink" title="UIKit生命周期方法"></a>UIKit生命周期方法</h4><p>UIKit初始化您的APP委托类的实例，并向其发送<a target="_blank" rel="noopener" href="https://developer.apple.com/documentation/uikit/uiapplicationdelegate/1623032-application"><code>application（_：willFinishLaunchingWithOptions :)</code></a>和<a target="_blank" rel="noopener" href="https://developer.apple.com/documentation/uikit/uiapplicationdelegate/1622921-application"><code>application（_：didFinishLaunchingWithOptions :)</code></a>消息。</p>
+<p>这些方法在主线程上被调用，由于执行它们所花费的时间计入启动时间，因此建议仅在此处创建APP的初始显示并推迟其他任务。</p>
+<p>如果有必要向用户显示之前数据，请推迟数据模型同步或API调用，直到APP运行为止。 在首次使用而不是在APP启动时初始化非视图功能，例如持久性存储和位置服务。</p>
+<h4 id="初始视图层次结构"><a href="#初始视图层次结构" class="headerlink" title="初始视图层次结构"></a>初始视图层次结构</h4><p>在APP的第一帧上绘制视图所需的时间也计入启动时间。 在UIKit中，每个视图都添加到主线程上的视图层次结构中，因此，更复杂的视图层次结构会导致启动时间增加。</p>
+<p>降低视图层次结构的复杂性，并用常规UIView替换覆盖<code>draw</code>方法的视图将有助于缩短加载时间。</p>
+<p>尝试仅渲染屏幕上可见的视图部分。</p>
+<p>可能还有很多其他原因可能会影响启动时间，但是我可以找到这些主要原因，并且，我相信，如果您认真地遵循上述方法，将会为用户创造更好的体验。</p>
+<h4 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h4><ul>
+<li>1、有三种类型的启动类型， 冷启动，暖启动和热启动。</li>
+<li>2、启动时间分为两类：<br>main之前—<code> main()</code>执行之前花费的时间<br>main之后—在<code>main()</code>执行之后直到第一个ViewController可见所花费的时间。</li>
+<li>3、我们研究了导致启动时间增加的几个因素：动态库加载时间，静态初始化程序，执行AppDelegate生命周期方法所花费的时间以及绘制第一个ViewController所花费的时间。</li>
+<li>4、我们发现您应该<a href="http://rickli.github.io/2021/05/01/Mach-O-Executable/">阅读本文</a>，以了解有关<code>pre-main()</code>流程的更多信息。</li>
+</ul>
+<h4 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h4><p><a target="_blank" rel="noopener" href="https://developer.apple.com/videos/play/wwdc2016/406/">App Startup Time</a><br><a target="_blank" rel="noopener" href="https://developer.apple.com/videos/play/wwdc2019/423/">Optimizing App Launch</a><br><a target="_blank" rel="noopener" href="https://developer.apple.com/documentation/xcode/improving_your_app_s_performance/reducing_your_app_s_launch_time">Reduce App Launch Time</a></p>
+
+      
+    </div>
+
+  </div>
+
+  <div class="article-footer">
+    <div class="article-meta pull-left">
+
+    
+
+    
+
+    </div>
+
+    
+  </div>
+</article>
+
+
+
+  <article>
+
+  
+    
     <h3 class="article-title"><a href="/2021/04/30/记录使用hexo-发布出错/"><span>记录使用hexo 发布出错</span></a></h3>
     
   
@@ -84,7 +297,8 @@
 <p>通过终端执行上面的指令后，终于发布成功了。</p>
 <h3 id="使用本地图显示异常"><a href="#使用本地图显示异常" class="headerlink" title="使用本地图显示异常"></a>使用本地图显示异常</h3><p>通过install hexo-asset-image这个库来显示本地图，但是发现还是无法展示，需要更改_config.yml</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">url: https://rickli.github.io/</span><br><span class="line">root: /</span><br><span class="line"></span><br><span class="line">post_asset_folder: <span class="literal">true</span></span><br></pre></td></tr></table></figure>
-<p>在md需要插入图片的地方使用<br><img src="/2021/04/30/%E8%AE%B0%E5%BD%95%E4%BD%BF%E7%94%A8hexo-%E5%8F%91%E5%B8%83%E5%87%BA%E9%94%99/event_respond_type.png" alt="event_respond_type"></p>
+<p>在md需要插入图片的地方使用</p>
+<figure class="highlight md"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">![<span class="string">event_respond_type</span>](<span class="link">iOS-Respond-Chain-Explain/event_respond_type.png</span>)</span><br></pre></td></tr></table></figure>
 <p>Done！</p>
 
       

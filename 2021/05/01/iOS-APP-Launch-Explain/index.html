@@ -1,0 +1,178 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>iOS APP 启动详解 | </title>
+
+  
+  <meta name="author" content="Rick Li">
+  
+
+  
+  <meta name="description" content="等待启动是任何APP提供的第一个用户体验。 APP的启动屏幕后面可能会发生很多事情，当然，它应该可以立即使用。 精美的动画只能吸引用户，最终，他们只是想把事情做好！
+而且，由于一个APP一天可以启动N次，因此务必要注意该指标。 从用户点击您的APP图标到在屏幕上绘制第一个视图之间经过的所有时间都有助">
+  
+
+  
+  
+  <meta name="keywords" content="">
+  
+
+  <meta id="viewport" name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+  <meta property="og:title" content="iOS APP 启动详解"/>
+
+  <meta property="og:site_name" content=""/>
+
+  
+  <meta property="og:image" content="/favicon.ico"/>
+  
+
+  <link href="/favicon.ico" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+
+<body>
+<div class="blog">
+  <div class="content">
+
+    <header>
+  <div class="site-branding">
+    <h1 class="site-title">
+      <a href="/"></a>
+    </h1>
+    <p class="site-description"></p>
+  </div>
+  <nav class="site-navigation">
+    <ul>
+      
+    </ul>
+  </nav>
+</header>
+
+    <main class="site-main posts-loop">
+    <article>
+
+  
+    
+    <h3 class="article-title"><span>iOS APP 启动详解</span></h3>
+    
+  
+
+  <div class="article-top-meta">
+    <span class="posted-on">
+      <a href="/2021/05/01/iOS-APP-Launch-Explain/" rel="bookmark">
+        <time class="entry-date published" datetime="2021-05-01T03:03:47.000Z">
+          2021-05-01
+        </time>
+      </a>
+    </span>
+  </div>
+
+
+  
+
+  <div class="article-content">
+    <div class="entry">
+      
+        <p>等待启动是任何APP提供的第一个用户体验。 APP的启动屏幕后面可能会发生很多事情，当然，它应该可以立即使用。 精美的动画只能吸引用户，最终，他们只是想把事情做好！</p>
+<p>而且，由于一个APP一天可以启动N次，因此务必要注意该指标。 从用户点击您的APP图标到在屏幕上绘制第一个视图之间经过的所有时间都有助于您感知到APP的启动时间。</p>
+<p>在讨论影响启动时间的因素之前，让我们先了解一下各种启动。</p>
+<h4 id="启动类型"><a href="#启动类型" class="headerlink" title="启动类型"></a>启动类型</h4><ul>
+<li>1、冷启动<br>这意味着系统内核缓冲区缓存中不存在App进程。 通常是在首次启动该APP时或在重新启动设备并清除内核缓存时发生的。 这种启动花费了最长的时间，因此应考虑进行启动时间分析。</li>
+<li>2、暖启动<br>这是一种启动类型，其中APP进程和数据存在于系统的内存中，然后被带到前台。 这类似于杀死该APP并重新启动。</li>
+<li>3、热启动<br>当APP从后台或挂起状态进入前台时，就会发生这种启动。</li>
+</ul>
+<p>现在，我们知道了启动类型，我们需要讨论两种启动时间。</p>
+<h4 id="main-之前的启动-时间"><a href="#main-之前的启动-时间" class="headerlink" title="main()之前的启动 时间"></a>main()之前的启动 时间</h4><p>这是内核用于加载APP（<a href="http://rickli.github.io/2021/05/01/Mach-O-Executable/">Mach-O可执行文件</a>）的时间。 您可以在此处阅读有关<a href="http://rickli.github.io/2021/05/01/Mach-O-Executable/">加载顺序</a>的更多信息。</p>
+<blockquote>
+<p>如果您是Objective-C开发人员，则可能已经看过APP的main（），但是即使您使用Swift编写代码，该方法仍然存在，但看不到它。</p>
+</blockquote>
+<p>直到控件到达您APP的main（）函数为止的所有时间都计入主时间之前。</p>
+<p>而且，由于所有这些都是在控件到达您的APP之前发生的，因此这段时间很难控制。 好吧，不是真的，但是我们将讨论这一点。</p>
+<p>Dyld有一个内置的机制来衡量这一点，您所要做的就是编辑您的APP方案，并将环境变量DYLD_PRINT_STATISTICS添加为1，如下所示<br><img src="/2021/05/01/iOS-APP-Launch-Explain/DYLD_PRINT_STATISTICS.png" alt="scheme editor"><br>您还可以将构建配置设置为“发布”模式，最好在iPhone而不是模拟器上运行它。 完成配置并运行APP后，您会在控制台中看到类似的内容。<br><img src="/2021/05/01/iOS-APP-Launch-Explain/Pre_main_launch_metrics_in_console.png" alt="Pre-main launch metrics in console
+"></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">dylib loading time: 378.82 milliseconds (52.2%)</span><br><span class="line">    rebase/binding time: 126687488.8 seconds (397295283.8%)</span><br><span class="line">        ObjC setup time: 115.89 milliseconds (15.9%)</span><br><span class="line">       initializer time: 335.12 milliseconds (46.2%)</span><br><span class="line">       slowest intializers :</span><br><span class="line">         libSystem.B.dylib :   5.33 milliseconds (0.7%)</span><br><span class="line">libMainThreadChecker.dylib : 301.22 milliseconds (41.5%)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>从上面我们可以知道有许多因素会影响启动时间，例如dylib加载时间，rebase/binding， ObjC 设置， 初始化时间，libSystem.B.dylib，以及libMainThreadChecker.dylib等。</p>
+<p>首先，我们需要研究第二种启动时间。</p>
+<h4 id="main-之后的启动时间"><a href="#main-之后的启动时间" class="headerlink" title="main()之后的启动时间"></a>main()之后的启动时间</h4><p>这是从启动APP的<a target="_blank" rel="noopener" href="https://developer.apple.com/documentation/uikit/uiapplicationdelegate/1623032-application">app:willFinishLaunchingWithOptions：</a>和<a target="_blank" rel="noopener" href="https://developer.apple.com/documentation/uikit/uiapplicationdelegate/1622921-application">app:didFinishLaunchingWithOptions</a>到您的AppDelegate一直到第一个ViewControllers绘图周期结束为止的时间，即直到调用viewDidLoad和viewDidLayoutSubviews为止。</p>
+<p>您可能已经猜到了，要测量该时间，您必须测量从willFinishLaunching方法到第一个ViewController的viewDidLayoutSubviews（通常是APP的预排/主屏幕）之间的时间。</p>
+<p>并且，我们还将讨论影响启动时间的因素。</p>
+<p>因此，总启动时间的最终方程为</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pre-main() 时间 + post-main() 时间 = App 总的启动时间</span><br></pre></td></tr></table></figure>
+<h4 id="影响启动时间性能的因素"><a href="#影响启动时间性能的因素" class="headerlink" title="影响启动时间性能的因素"></a>影响启动时间性能的因素</h4><p>有几个因素会影响您的启动时间效果</p>
+<h5 id="动态库加载时间"><a href="#动态库加载时间" class="headerlink" title="动态库加载时间"></a>动态库加载时间</h5><p>动态加载程序（dyld）加载APP的可执行文件，并检查可执行文件中的加载命令，以查找App所需的框架和动态库。 添加到您的APP的任何动态框架都有助于这一时期。</p>
+<p>因此，限制在Xcode的“Linked Frameworks and Libraries”设置嵌入的框架数量可以帮助减少启动时间。</p>
+<p>您可以在此处阅读有关<a href="http://rickli.github.io/2021/05/01/Mach-O-Executable/">dyld</a>的更多信息。</p>
+<p>解决此问题的另一种方法是使用静态框架，它们是在编译时内置于APP可执行文件中的，因此dylib不必完成上述所有工作。<br><img src="/2021/05/01/iOS-APP-Launch-Explain/swift_framework.png" alt="swift_framework"><br>通过这样做，您可以节省大量的pre-main（）启动时间。<br><img src="/2021/05/01/iOS-APP-Launch-Explain/static_library.png" alt="static_library"><br>尽管在iOS 13中，dyld3包含在iOSAPP中，这是一个很大的改进，因为它将使iOSAPP的启动速度提高2倍。 但是，仍然无法使用静态框架。</p>
+<h5 id="Static-初始化"><a href="#Static-初始化" class="headerlink" title="Static 初始化"></a>Static 初始化</h5><p>APP中的某些代码必须在iOS运行您的APP的main（）函数之前运行，这会增加启动时间。 此代码包括</p>
+<ul>
+<li>C / C ++静态初始化程序-通常，您不会在APP中找到类似的东西，但是如果您愿意，我希望对它有所了解。 任何定义为__attribute__((constructor)) 的函数都是C中的静态构造函数，它们的特长是在执行main（）之前调用它们！ 你可以在<a target="_blank" rel="noopener" href="https://www.geeksforgeeks.org/__attribute__constructor-__attribute__destructor-syntaxes-c/">这里</a>读更多关于它的内容。</li>
+<li>在OC类或Category中声明的 <code>+load</code>方法。 如上图所示，它们在<code>main()</code>之前调用，并增加了ObjC的设置时间。 此外，不建议使用此方法，而应改用<code>+ initialize</code>方法。</li>
+<li>链接到APP可执行文件或Mach-O的<code>__DATA,__mod_init_func</code>段的任何函数。 这些函数通常位于__DATA段的__mod_init_func段内。</li>
+</ul>
+<p>因此，根据一般经验，将代码移至APP生命周期的后期，即APP启动完成后但需要工作结果之前。</p>
+<p>您可以在Xcode中使用静态初始化程序工具来查找您的APP花了多少时间来运行静态初始化程序。</p>
+<h4 id="UIKit生命周期方法"><a href="#UIKit生命周期方法" class="headerlink" title="UIKit生命周期方法"></a>UIKit生命周期方法</h4><p>UIKit初始化您的APP委托类的实例，并向其发送<a target="_blank" rel="noopener" href="https://developer.apple.com/documentation/uikit/uiapplicationdelegate/1623032-application"><code>application（_：willFinishLaunchingWithOptions :)</code></a>和<a target="_blank" rel="noopener" href="https://developer.apple.com/documentation/uikit/uiapplicationdelegate/1622921-application"><code>application（_：didFinishLaunchingWithOptions :)</code></a>消息。</p>
+<p>这些方法在主线程上被调用，由于执行它们所花费的时间计入启动时间，因此建议仅在此处创建APP的初始显示并推迟其他任务。</p>
+<p>如果有必要向用户显示之前数据，请推迟数据模型同步或API调用，直到APP运行为止。 在首次使用而不是在APP启动时初始化非视图功能，例如持久性存储和位置服务。</p>
+<h4 id="初始视图层次结构"><a href="#初始视图层次结构" class="headerlink" title="初始视图层次结构"></a>初始视图层次结构</h4><p>在APP的第一帧上绘制视图所需的时间也计入启动时间。 在UIKit中，每个视图都添加到主线程上的视图层次结构中，因此，更复杂的视图层次结构会导致启动时间增加。</p>
+<p>降低视图层次结构的复杂性，并用常规UIView替换覆盖<code>draw</code>方法的视图将有助于缩短加载时间。</p>
+<p>尝试仅渲染屏幕上可见的视图部分。</p>
+<p>可能还有很多其他原因可能会影响启动时间，但是我可以找到这些主要原因，并且，我相信，如果您认真地遵循上述方法，将会为用户创造更好的体验。</p>
+<h4 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h4><ul>
+<li>1、有三种类型的启动类型， 冷启动，暖启动和热启动。</li>
+<li>2、启动时间分为两类：<br>main之前—<code> main()</code>执行之前花费的时间<br>main之后—在<code>main()</code>执行之后直到第一个ViewController可见所花费的时间。</li>
+<li>3、我们研究了导致启动时间增加的几个因素：动态库加载时间，静态初始化程序，执行AppDelegate生命周期方法所花费的时间以及绘制第一个ViewController所花费的时间。</li>
+<li>4、我们发现您应该<a href="http://rickli.github.io/2021/05/01/Mach-O-Executable/">阅读本文</a>，以了解有关<code>pre-main()</code>流程的更多信息。</li>
+</ul>
+<h4 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h4><p><a target="_blank" rel="noopener" href="https://developer.apple.com/videos/play/wwdc2016/406/">App Startup Time</a><br><a target="_blank" rel="noopener" href="https://developer.apple.com/videos/play/wwdc2019/423/">Optimizing App Launch</a><br><a target="_blank" rel="noopener" href="https://developer.apple.com/documentation/xcode/improving_your_app_s_performance/reducing_your_app_s_launch_time">Reduce App Launch Time</a></p>
+
+      
+    </div>
+
+  </div>
+
+  <div class="article-footer">
+    <div class="article-meta pull-left">
+
+    
+
+    
+
+    </div>
+
+    
+  </div>
+</article>
+
+  
+
+
+
+
+
+
+    </main>
+
+    <footer class="site-footer">
+  <p class="site-info">
+    Proudly powered by <a href="https://hexo.io/" target="_blank">Hexo</a> and
+    Theme by <a href="https://github.com/CodeDaraW/Hacker" target="_blank">Hacker</a>
+    </br>
+    
+    &copy; 2021 Rick Li
+    
+  </p>
+</footer>
+    
+    
+  </div>
+</div>
+</body>
+</html>

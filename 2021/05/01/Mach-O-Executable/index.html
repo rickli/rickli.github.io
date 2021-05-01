@@ -1,0 +1,198 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Mach-O Executable | </title>
+
+  
+  <meta name="author" content="Rick Li">
+  
+
+  
+  <meta name="description" content="我想谈谈这个神秘的词Mach-O…它是什么？它是如何工作的？
+为了解决所有这些问题，我们必须亲自动手深入挖掘…
+当我们使用Xcode构建APP时，很多事情同时发生。 其中之一是将所有源代码转换为可执行文件。 该可执行文件包含将在CPU，iOS设备上的ARM处理器或Mac上的英特尔处理器上运行的字节码">
+  
+
+  
+  
+  <meta name="keywords" content="iOS">
+  
+
+  <meta id="viewport" name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+  <meta property="og:title" content="Mach-O Executable"/>
+
+  <meta property="og:site_name" content=""/>
+
+  
+  <meta property="og:image" content="/favicon.ico"/>
+  
+
+  <link href="/favicon.ico" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+
+<body>
+<div class="blog">
+  <div class="content">
+
+    <header>
+  <div class="site-branding">
+    <h1 class="site-title">
+      <a href="/"></a>
+    </h1>
+    <p class="site-description"></p>
+  </div>
+  <nav class="site-navigation">
+    <ul>
+      
+    </ul>
+  </nav>
+</header>
+
+    <main class="site-main posts-loop">
+    <article>
+
+  
+    
+    <h3 class="article-title"><span>Mach-O Executable</span></h3>
+    
+  
+
+  <div class="article-top-meta">
+    <span class="posted-on">
+      <a href="/2021/05/01/Mach-O-Executable/" rel="bookmark">
+        <time class="entry-date published" datetime="2021-05-01T04:09:36.000Z">
+          2021-05-01
+        </time>
+      </a>
+    </span>
+  </div>
+
+
+  
+
+  <div class="article-content">
+    <div class="entry">
+      
+        <p>我想谈谈这个神秘的词Mach-O…<br>它是什么？<br>它是如何工作的？</p>
+<p>为了解决所有这些问题，我们必须亲自动手深入挖掘…</p>
+<p>当我们使用Xcode构建APP时，很多事情同时发生。 其中之一是将所有源代码转换为可执行文件。 该可执行文件包含将在CPU，iOS设备上的ARM处理器或Mac上的英特尔处理器上运行的字节码。</p>
+<p>该可执行文件称为Mach-O。</p>
+<h2 id="Mach-O-格式"><a href="#Mach-O-格式" class="headerlink" title="Mach-O 格式"></a>Mach-O 格式</h2><p>Mach-O是字节的二进制流，被分成有意义的数据块。 这些块包含有关元数据的信息，例如字节顺序，CPU类型，块大小等。</p>
+<p>Mach-O有多种类型，最典型的是您会看到这些：</p>
+<ul>
+<li>可执行文件 主APP二进制文件，例如Example.app/Example</li>
+<li>Dylib 动态库，例如libSwiftCore.dylib<br>因此，Mach-O文件分为几个部分，看起来像这样<br><img src="/2021/05/01/Mach-O-Executable/mach_binary.png" alt="mach binary"><br>但在深入探讨分段之前，我们先来看看其他内容</li>
+</ul>
+<h3 id="Mach-O-Header"><a href="#Mach-O-Header" class="headerlink" title="Mach-O Header"></a>Mach-O Header</h3><p><img src="/2021/05/01/Mach-O-Executable/Mach-O_header.png" alt="Mach-O header"><br>每个Mach-O文件都以定义文件结构的头结构开头。 它还包含有关文件类型和目标体系结构（armv7，armv7s，i386等）的信息。</p>
+<p>头文件结构的正下方是一堆加载命令，这些命令有助于文件的布局和链接。 另外，加载命令可以指定</p>
+<ul>
+<li>文件在虚拟内存中的初始布局</li>
+<li>Section名称和地址</li>
+<li>要加载的dylib</li>
+<li>“main”函数地址</li>
+<li>代码签名<br>这就是完整的标题的样子！<br><img src="/2021/05/01/Mach-O-Executable/complete_header.png" alt="Mach-O complete header"><br>如您所见，Mach-O头文件由一堆加载命令组成，这些命令定义了各节的地址，主函数以及要加载的从属二进制文件。</li>
+</ul>
+<p>上面提到的地址实际上与加载Mach-O的内存地址有偏差。 这样做是因为每次启动APP时，都会使用一种称为“自动空间布局随机化”的精巧技术或我们亲切地称为ASLR的启动技术来对起始内存地址进行随机化。</p>
+<p>这意味着您的APP进程启动时，您不知道它将从哪个地址开始启动。<br>让我们想象一下它的含义，假设您有一个全局变量，它占用了RAM中的某些内存地址，但是由于您不知道进程从何处开始，因此您可能无法确定该全局变量的内存地址！</p>
+<p>您可能已经猜到，这样做是出于安全目的，否则，如果每次启动时所有地址都相同，那么破解二进制文件将变得非常容易！</p>
+<h3 id="Segments"><a href="#Segments" class="headerlink" title="Segments"></a>Segments</h3><p>让我们看一下Mach-O文件的各个部分</p>
+<h4 id="PAGEZERO"><a href="#PAGEZERO" class="headerlink" title="__PAGEZERO"></a>__PAGEZERO</h4><p>这是可执行文件的第一部分，内部没有数据，因此不占用文件空间。 该段充满零以捕获NULL指针取消引用。 您可能已经遇到了EXC_BAD_ACCESS崩溃，这恰恰是因为代码中的某些内容试图从此处访问数据，而这是不允许的。<br>顺便说一句，此段可能是隐藏恶意代码的好地方😉</p>
+<h4 id="TEXT"><a href="#TEXT" class="headerlink" title="__TEXT"></a>__TEXT</h4><p>该段包含可执行代码和只读数据。 将该段设置为只读，以允许在将段映射到内存时共享该段。 这主要与框架，bundles和共享库一起使用。</p>
+<p>并且，由于__TEXT段是只读的，因此不需要将任何更改保存回磁盘。 如果内核需要释放内存，它将仅删除__TEXT页面并在需要时重新读取它们。</p>
+<p>这就是iOS和OSX如此积极地缓存其动态库的原因。</p>
+<h4 id="DATA"><a href="#DATA" class="headerlink" title="__DATA"></a>__DATA</h4><p>该段包含可写数据（例如，全局变量，静态变量等），并且由于可写，因此逻辑上为与该库链接的每个进程复制框架或其他共享库的__DATA段。</p>
+<p>如果您有使用Swift的经验，那么您必须熟悉写时复制，这实际上意味着在引用的内容进行编辑之前，不要创建副本。 同样，当复制__DATA段时，直到某个进程对其进行修改后，该进程才真正接收到它自己的页面私有副本。</p>
+<h4 id="OBJC"><a href="#OBJC" class="headerlink" title="__OBJC"></a>__OBJC</h4><p>这是一个可选段，包含由Objective-C语言运行时支持库使用的数据。</p>
+<h4 id="IMPORT"><a href="#IMPORT" class="headerlink" title="__IMPORT"></a>__IMPORT</h4><p>这也是一个可选段，包含符号存记录和指向可执行文件中未定义的符号的非惰性指针。 仅针对IA-32体系结构的可执行文件生成此段。</p>
+<h4 id="LINKEDIT"><a href="#LINKEDIT" class="headerlink" title="__LINKEDIT"></a>__LINKEDIT</h4><p>该段包含链接器（链接编辑器）的原始数据，例如符号和字符串表，压缩的动态链接信息，代码签名信息以及间接符号表，所有这些数据均由装入命令指定的区域占据。</p>
+<p>因此，既然我们已经了解了各个部分，那么让我们尝试着眼于大局，看看它们如何融合在一起。</p>
+<h3 id="全局图—-DYLD"><a href="#全局图—-DYLD" class="headerlink" title="全局图— DYLD"></a>全局图— DYLD</h3><p>直到现在我们知道</p>
+<ul>
+<li>1、如何生成Mach-O文件，并使用其加载命令以各种方式链接依赖项。</li>
+<li>2、加载命令用于映射内存命令中的段。</li>
+<li>3、文件的执行从LC_MAIN开始<br>好吧，这仅仅是信息，而该信息需要大脑进行处理。这个大脑叫做Dyld！</li>
+</ul>
+<p>当您通过点击APP图标启动APP时，而不是启动您的APP，内核会启动dyld！<br>我知道，对吧！ 这个家伙在这里很重要。<br>内核实际上将在某些随机地址空间加载dyld，并且内核本身将具有自己的__TEXT段，__ DATA段……好了，您就知道了。<br><img src="/2021/05/01/Mach-O-Executable/dyld_loaded_in_RAM.png" alt="dyld loaded in RAM"><br>dyld的工作主要是为我们加载和设置所有依赖的dylib。</p>
+<h4 id="加载-dylibs"><a href="#加载-dylibs" class="headerlink" title="加载 dylibs"></a>加载 dylibs</h4><p>dyld在此处读取Mach-O标头，以查找有关从属dylib的信息。 然后，它在文件系统上找到该库文件并对其进行解析。</p>
+<p>此过程是递归完成的，因为dylib A可以依赖dylib B，而dylib B可以依赖dylib C，因此它必须解析整个依赖关系图，最后将所有这些dylib的段映射到原始Mach-O头文件中。</p>
+<p>而且，整个处理可能看起来像这样。<br><img src="/2021/05/01/Mach-O-Executable/Multiple_dylibs_loaded.png" alt="Multiple dylibs loaded"><br>现在，请记住我们讨论过ASLR，以及如何不知道将哪个地址分配给APP中的所有变量。  dyld必须使用以下技术来解决此问题。</p>
+<h4 id="Rebasing"><a href="#Rebasing" class="headerlink" title="Rebasing"></a>Rebasing</h4><p>__LINKEDIT部分包含所有需要移动的指针的位置。  Dyld将遍历所有这些指针，并根据您APP的起始地址对其进行移位。</p>
+<p>请注意，要执行此操作，我们必须读取和写入数据页，从而导致这些页变脏，并且需要在写入时进行复制。 这就是为什么Rebasing在IO中非常昂贵的原因。</p>
+<h4 id="Binding"><a href="#Binding" class="headerlink" title="Binding"></a>Binding</h4><p>对其他dylib函数的引用是使用绑定固定的，例如NSLog，malloc等。</p>
+<p>dyld加载依赖库后，需要搜索符号表并找到这些符号的实现。<br>因此，二进制文件中实际上存在一个名为<code>_NSLog</code>的字符串，该字符串尚未解析，而dyld要做的是查找符号表，并用相关库中这些函数的地址填充该表。</p>
+<p>这在计算上很复杂并且很昂贵</p>
+<h4 id="Objc-Runtime"><a href="#Objc-Runtime" class="headerlink" title="Objc Runtime"></a>Objc Runtime</h4><p>所有Objc类定义都需要注册，为什么？ 因为您可以从调用<code>NSClassFromString(_:)</code>方法的字符串构造Objc类。</p>
+<p>因此，dyld必须先构建此表，然后才能启动APP。</p>
+<p>在类别中添加方法列表-这意味着，如果您已经在UIView上创建了一个类别并添加了许多新函数，则这些新函数将被添加到UIView的方法列表中。</p>
+<p>它还可以确保<a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/11051528/understanding-uniqueness-of-selectors-in-objective-c/11052795#11052795">选择器是唯一</a>的。</p>
+<h4 id="Run-Initializers"><a href="#Run-Initializers" class="headerlink" title="Run Initializers"></a>Run Initializers</h4><ul>
+<li>此时将调用Objc <code>+ load</code>方法</li>
+<li>C ++静态初始化程序<br>这是以自下而上的方式发生的，因此基本上将首先初始化从属库。<br>哇！ 完成所有这些操作之后，最后，您的<code>main()</code>将执行。<br>而且，这就是难以捉摸的Mach-O文件背后的故事。<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3></li>
+<li>1、二进制文件使用带有__TEXT，__ DATA和__LINKEDIT段的Mach-O格式。</li>
+<li>2、Dyld需要解析并加载所有动态库依赖项。</li>
+<li>3、Dyld需要修复内部和外部的所有指针（变基，绑定，设置运行时）。</li>
+<li>4、运行静态初始化程序和+ load方法。</li>
+<li>5、然后<code>main()</code><h3 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h3></li>
+<li>1、Dyld在您的APP启动之前运行。</li>
+<li>2、避免使用+ load方法，它是已弃用的API，在<code>main()</code>增加APP启动时间之前调用。</li>
+<li>3、对于App库，由于dyld必须完成每个dylib的所有解析，加载和修复工作，因此dylib将招致大量启动开销。 请改用静态库。</li>
+</ul>
+
+      
+    </div>
+
+  </div>
+
+  <div class="article-footer">
+    <div class="article-meta pull-left">
+
+    
+
+    
+    
+
+    <span class="post-tags">
+      <i class="icon-tags"></i>
+        <a href="/tags/iOS/">iOS</a>
+    </span>
+    
+
+    </div>
+
+    
+  </div>
+</article>
+
+  
+
+
+
+
+
+
+    </main>
+
+    <footer class="site-footer">
+  <p class="site-info">
+    Proudly powered by <a href="https://hexo.io/" target="_blank">Hexo</a> and
+    Theme by <a href="https://github.com/CodeDaraW/Hacker" target="_blank">Hacker</a>
+    </br>
+    
+    &copy; 2021 Rick Li
+    
+  </p>
+</footer>
+    
+    
+  </div>
+</div>
+</body>
+</html>
