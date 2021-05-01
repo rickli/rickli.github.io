@@ -80,8 +80,12 @@
 <p>方向错了，因为deploy失败所以潜意识一直认为是ssh的问题，执行了ssh添加id_rsa</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ssh-add ~/.ssh/id_swift_rsa</span><br></pre></td></tr></table></figure>
 <p>最后查询到</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">eval</span> $(ssh-agent)</span><br><span class="line">ssh-add ~/.ssh/user2_rsa</span><br><span class="line">hexo d</span><br></pre></td></tr></table></figure>
-<p>通过终端执行上面的指令后，终于发布成功了。记录下这个坑</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">eval</span> $(ssh-agent)</span><br><span class="line">ssh-add -K ~/.ssh/id_swift_rsa</span><br><span class="line">hexo d</span><br></pre></td></tr></table></figure>
+<p>通过终端执行上面的指令后，终于发布成功了。</p>
+<h3 id="使用本地图显示异常"><a href="#使用本地图显示异常" class="headerlink" title="使用本地图显示异常"></a>使用本地图显示异常</h3><p>通过install hexo-asset-image这个库来显示本地图，但是发现还是无法展示，需要更改_config.yml</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">url: https://rickli.github.io/</span><br><span class="line">root: /</span><br><span class="line"></span><br><span class="line">post_asset_folder: <span class="literal">true</span></span><br></pre></td></tr></table></figure>
+<p>在md需要插入图片的地方使用<br><img src="/2021/04/30/%E8%AE%B0%E5%BD%95%E4%BD%BF%E7%94%A8hexo-%E5%8F%91%E5%B8%83%E5%87%BA%E9%94%99/event_respond_type.png" alt="event_respond_type"></p>
+<p>Done！</p>
 
       
     </div>
@@ -158,11 +162,17 @@
 <h4 id="事件处理"><a href="#事件处理" class="headerlink" title="事件处理"></a>事件处理</h4><figure class="highlight objc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// UIView是UIResponder的子类，可以覆盖下列4个方法处理不同的触摸事件</span></span><br><span class="line"><span class="comment">// 一根或者多根手指开始触摸view，系统会自动调用view的下面方法</span></span><br><span class="line">- (<span class="keyword">void</span>)touchesBegan:(<span class="built_in">NSSet</span> *)touches withEvent:(<span class="built_in">UIEvent</span> *)event</span><br><span class="line"><span class="comment">// 一根或者多根手指在view上移动，系统会自动调用view的下面方法（随着手指的移动，会持续调用该方法）</span></span><br><span class="line">- (<span class="keyword">void</span>)touchesMoved:(<span class="built_in">NSSet</span> *)touches withEvent:(<span class="built_in">UIEvent</span> *)event</span><br><span class="line"><span class="comment">// 一根或者多根手指离开view，系统会自动调用view的下面方法</span></span><br><span class="line">- (<span class="keyword">void</span>)touchesEnded:(<span class="built_in">NSSet</span> *)touches withEvent:(<span class="built_in">UIEvent</span> *)event</span><br><span class="line"><span class="comment">// 触摸结束前，某个系统事件(例如电话呼入)会打断触摸过程，系统会自动调用view的下面方法</span></span><br><span class="line">- (<span class="keyword">void</span>)touchesCancelled:(<span class="built_in">NSSet</span> *)touches withEvent:(<span class="built_in">UIEvent</span> *)event</span><br><span class="line"><span class="comment">// 提示：touches中存放的都是UITouch对象</span></span><br></pre></td></tr></table></figure>
 <p>需要注意的是：以上四个方法是由系统自动调用的，所以可以通过重写该方法来处理一些事件。</p>
 <ul>
-<li>如果两根手指同时触摸一个view，那么view只会调用一次touchesBegan:withEvent:方法，touches参数中装着2个UITouch对象</li>
-<li>如果这两根手指一前一后分开触摸同一个view，那么view会分别调用2次touchesBegan:withEvent:方法，并且每次调用时的touches参数中只包含一个UITouch对象<br>重写以上四个方法，如果是处理UIView的触摸事件。必须要自定义UIView子类继承自UIView。因为苹果不开源，没有把UIView的.m文件提 供给我们。我们只能通过子类继承父类，重写子类方法的方式处理UIView的触摸事件（注意：我说的是UIView触摸事件而不是说的 UIViewController的触摸事件）。<br>如果是处理UIViewController的触摸事件，那么在控制器的.m文件中直接重写那四个方法即可！<h4 id="事件的产生"><a href="#事件的产生" class="headerlink" title="事件的产生"></a>事件的产生</h4>对于触摸事件，首先要找到能够响应该事件的对象，iOS是用hit_testing来找到哪个视图被触摸了，也就是以keyWindow为起点，hit-test view为终点，逐级调用hitTest:withEvent<br><img src="/2021/04/27/iOS-Respond-Chain-Explain/response_chain.png" alt="response_chain"><img src="/2021/04/27/iOS-Respond-Chain-Explain/response_chain.png" class title="response_chain"></li>
-<li>发生触摸事件后，系统会将该事件加入到一个由UIApplication管理的事件队列中,为什么是队列而不是栈？因为队列的特点是FIFO，即先进先出，先产生的事件先处理才符合常理，所以把事件添加到队列。</li>
-<li>UIApplication会从事件队列中取出最前面的事件，并将事件分发下去以便处理，通常，先发送事件给应用程序的主窗口（keyWindow）。</li>
-<li>主窗口会在视图层次结构中找到一个最合适的视图来处理触摸事件，这也是整个事件处理过程的第一步。<br>找到合适的视图控件后，就会调用视图控件的touches方法来作具体的事件处理。<br>所以点击事件的响应是，顶部的view 传到父view，一直到父类上面<br>hitTest:withEvent方法的处理流程：</li>
+<li><p>如果两根手指同时触摸一个view，那么view只会调用一次touchesBegan:withEvent:方法，touches参数中装着2个UITouch对象</p>
+</li>
+<li><p>如果这两根手指一前一后分开触摸同一个view，那么view会分别调用2次touchesBegan:withEvent:方法，并且每次调用时的touches参数中只包含一个UITouch对象<br>重写以上四个方法，如果是处理UIView的触摸事件。必须要自定义UIView子类继承自UIView。因为苹果不开源，没有把UIView的.m文件提 供给我们。我们只能通过子类继承父类，重写子类方法的方式处理UIView的触摸事件（注意：我说的是UIView触摸事件而不是说的 UIViewController的触摸事件）。<br>如果是处理UIViewController的触摸事件，那么在控制器的.m文件中直接重写那四个方法即可！</p>
+<h4 id="事件的产生"><a href="#事件的产生" class="headerlink" title="事件的产生"></a>事件的产生</h4><p>对于触摸事件，首先要找到能够响应该事件的对象，iOS是用hit_testing来找到哪个视图被触摸了，也就是以keyWindow为起点，hit-test view为终点，逐级调用hitTest:withEvent<br><img src="/2021/04/27/iOS-Respond-Chain-Explain/response_chain.png" alt="response_chain"></p>
+</li>
+<li><p>发生触摸事件后，系统会将该事件加入到一个由UIApplication管理的事件队列中,为什么是队列而不是栈？因为队列的特点是FIFO，即先进先出，先产生的事件先处理才符合常理，所以把事件添加到队列。</p>
+</li>
+<li><p>UIApplication会从事件队列中取出最前面的事件，并将事件分发下去以便处理，通常，先发送事件给应用程序的主窗口（keyWindow）。</p>
+</li>
+<li><p>主窗口会在视图层次结构中找到一个最合适的视图来处理触摸事件，这也是整个事件处理过程的第一步。<br>找到合适的视图控件后，就会调用视图控件的touches方法来作具体的事件处理。<br>所以点击事件的响应是，顶部的view 传到父view，一直到父类上面<br>hitTest:withEvent方法的处理流程：</p>
+</li>
 </ul>
 <p>先调用pointInside:withEvent:判断触摸点是否在当前视图内。</p>
 <p>– 如果返回YES，那么该视图的所有子视图调用hitTest:withEvent,调用顺序由层级低到高(top–&gt;bottom)依次调用。</p>
