@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   
-  <title>CodingBlog</title>
+  <title>Coding</title>
 
   
   <meta name="author" content="Rick Li">
@@ -19,14 +19,14 @@
 
   
 
-  <meta property="og:site_name" content="CodingBlog"/>
+  <meta property="og:site_name" content="Coding"/>
 
   
   <meta property="og:image" content="/favicon.ico"/>
   
 
   <link href="/favicon.ico" rel="icon">
-  <link rel="alternate" href="/atom.xml" title="CodingBlog" type="application/atom+xml">
+  <link rel="alternate" href="/atom.xml" title="Coding" type="application/atom+xml">
   <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
 <meta name="generator" content="Hexo 5.4.0"></head>
 
@@ -38,7 +38,7 @@
     <header>
   <div class="site-branding">
     <h1 class="site-title">
-      <a href="/">CodingBlog</a>
+      <a href="/">Coding</a>
     </h1>
     <p class="site-description"></p>
   </div>
@@ -86,11 +86,17 @@
 <p> 虚拟内存的主要好处包括：使应用程序（和程序员）不必管理共享的内存空间；由于内存隔离而提高了安全性；以及使用分页技术，在概念上可以使用比物理上可用的更多的内存。 实际上，几乎每种虚拟内存实现都将虚拟地址空间划分为连续的虚拟内存地址块，称为页面，通常大小为4 KB。<br>为了将进程的虚拟地址转换为硬件用来实际处理指令的物理内存地址，MMU使用了所谓的页表，即由OS管理的数据结构，用于存储虚拟地址和物理地址之间的映射 。<br>具体而言，MMU存储了整个OS页表中存储的映射中最近使用的映射的缓存，这称为转换后备缓冲区（TLB）。<br>下图描述了如上所述的地址转换任务。<br><img src="/2021/05/02/VM-Page-Swap/mmu.jpeg" alt="mmu"><br>当虚拟地址需要转换为物理地址时，MMU首先在TLB缓存中搜索它（上图中的步骤1.）。 如果找到匹配项（即TLB命中），则返回物理地址，然后继续进行计算（2.a.）。 相反，如果在TLB高速缓存中虚拟地址不匹配（即TLB未命中），则MMU在整个页表中搜索匹配，即页面遍历（2.b.）。 如果页表上存在此匹配项，则将其相应地写入TLB缓存（3.a.）。 因此，地址转换将重新启动，以便MMU能够在更新的TLB（1＆2.a.）上找到匹配项。<br>不幸的是，页表查找可能由于两个原因而失败。 </p>
 <ul>
 <li>第一个是指定的虚拟地址没有有效的转换时（例如，当进程尝试访问它无法请求的内存区域时）。 </li>
-<li>否则，如果此时未将请求的页面加载到主存储器中，则可能会发生这种情况（相应页面表条目上的相应标志指示这种情况）。<br>在这两种情况下，控件都从MMU（硬件）传递到页面管理器（操作系统内核的软件组件）。 在第一种情况下，页面管理程序通常会引发分段错误异常（3.b.）。 在第二种情况下，发生页面错误（3.c.），这意味着必须从当前存储该页面的辅助存储（即磁盘）中检索请求的页面。 因此，页面管理器访问磁盘，将与引起页面错误的虚拟地址相对应的页面重新存储在主存储器中（4.），并使用虚拟地址和物理地址之间的新映射来更新页面表和TLB。 地址已存储页面的位置（3.a.），最后告诉MMU重新开始该请求，以便发生TLB命中（1＆2.a.）。<br>事实证明，上述任务一直有效，直到主内存中有足够的空间来存储从磁盘返回的页面为止。 <blockquote>
-<p>但是，当所有物理内存都用完时，页面管理器还必须释放主内存中的页面以允许存储来自磁盘的传入页面。<br>为了公平地确定要从主内存移动到磁盘的页面，页面调度管理程序可以使用几种页面替换算法，例如最近最少使用（LRU）。 一般而言，将页面从/从辅助存储器移动到/从主存储器移动页面称为交换（4.），这就是为什么可能会发生页面错误的原因。<br>现在让我们回到在典型的32位Linux操作系统上OS内核和用户模式虚拟内存空间之间的分离，这已在<a href="todo">程序（进程）的内存中布局</a>中介绍，并在下面进行了介绍。<br><img src="/2021/05/02/VM-Page-Swap/memory_layout.jpeg" alt="memory_layout"><br>这并不意味着内核会使用那么多物理内存。 相反，这只是虚拟地址空间的一部分，可用于映射OS内核希望的任何物理内存，并且它与可用物理内存的大小正交。<br>还要注意，在Linux中，内核空间一直存在，并且在所有进程中都映射相同的物理内存，这意味着内核空间不会改变，并且在任何进程上下文切换中都映射到相同的物理内存地址。<br>按照上面的拆分规则，内核具有专用的1 GB内核虚拟地址空间，并且无论它进行什么分配，它始终使用那些地址集。 虚拟地址到物理内存地址的实际映射完全通过硬件（即MMU）和软件（即OS页面管理程序）的组合进行了上述流程。<br>假设系统X拥有512 MB的物理内存，则仅将整个1 GB虚拟空间中的512 MB映射为内核地址空间，而其余512 MB虚拟地址未映射。 另一方面，如果X具有2 GB的物理内存，则整个1 GB的虚拟地址将被映射到物理地址。<br>如果整个内核都不适合物理内存，则拥有虚拟内存可以使OS内核页面部分驻留在辅助存储（即磁盘）上。 实际上，这种情况不会发生（至少在Linux上是这样），因为最新的Linux内核大约只需要70 MB，这大大低于当今现代系统上可用的物理内存量。 此外，内核具有的数据和代码出于效率原因必须始终保存在主存储器中，并且还因为无法以其他方式处理页面错误。 想一想在发生页面错误时我们上面讨论的内容：OS内核（实际上是OS页面管理程序）控制系统，输入特定的中断服务例程（ISR）来处理页面错误，并将控制权交还给 产生页面错误的用户进程。 如果OS内核不完全适合主内存，则可能发生内核本身生成页面错误的情况。 在非常糟糕的情况下，这种页面错误可能例如使页面与页面错误处理例程的代码有关，从而阻塞了整个系统！ 因此，内核代码和数据始终是可寻址的（即，它永远不会产生页面错误），并随时可以处理中断或系统调用。</p>
-</blockquote>
-</li>
+<li>否则，如果此时未将请求的页面加载到主存储器中，则可能会发生这种情况（相应页面表条目上的相应标志指示这种情况）。 </li>
 </ul>
+<p>在这两种情况下，控件都从MMU（硬件）传递到页面管理器（操作系统内核的软件组件）。 在第一种情况下，页面管理程序通常会引发分段错误异常（3.b.）。 在第二种情况下，发生页面错误（3.c.），这意味着必须从当前存储该页面的辅助存储（即磁盘）中检索请求的页面。 因此，页面管理器访问磁盘，将与引起页面错误的虚拟地址相对应的页面重新存储在主存储器中（4.），并使用虚拟地址和物理地址之间的新映射来更新页面表和TLB。 地址已存储页面的位置（3.a.），最后告诉MMU重新开始该请求，以便发生TLB命中（1＆2.a.）。<br>事实证明，上述任务一直有效，直到主内存中有足够的空间来存储从磁盘返回的页面为止。 </p>
+<blockquote>
+<p>但是，当所有物理内存都用完时，页面管理器还必须释放主内存中的页面以允许存储来自磁盘的传入页面。 </p>
+</blockquote>
+<p>为了公平地确定要从主内存移动到磁盘的页面，页面调度管理程序可以使用几种页面替换算法，例如最近最少使用（LRU）。 一般而言，将页面从/从辅助存储器移动到/从主存储器移动页面称为交换（4.），这就是为什么可能会发生页面错误的原因。<br> 现在让我们回到在典型的32位Linux操作系统上OS内核和用户模式虚拟内存空间之间的分离，这已在<a href="https://rickli.github.io/2021/05/01/Understanding-Memory-Layout/">程序（进程）的内存中布局</a>中介绍，并在下面进行了介绍。<br> <img src="/2021/05/02/VM-Page-Swap/memory_layout.jpeg" alt="memory_layout"><br> 这并不意味着内核会使用那么多物理内存。 相反，这只是虚拟地址空间的一部分，可用于映射OS内核希望的任何物理内存，并且它与可用物理内存的大小正交。 </p>
+<blockquote>
+<p>还要注意，在Linux中，内核空间一直存在，并且在所有进程中都映射相同的物理内存，这意味着内核空间不会改变，并且在任何进程上下文切换中都映射到相同的物理内存地址。</p>
+</blockquote>
+<p> 按照上面的拆分规则，内核具有专用的1 GB内核虚拟地址空间，并且无论它进行什么分配，它始终使用那些地址集。 虚拟地址到物理内存地址的实际映射完全通过硬件（即MMU）和软件（即OS页面管理程序）的组合进行了上述流程。<br>  假设系统X拥有512 MB的物理内存，则仅将整个1 GB虚拟空间中的512 MB映射为内核地址空间，而其余512 MB虚拟地址未映射。 另一方面，如果X具有2 GB的物理内存，则整个1 GB的虚拟地址将被映射到物理地址。<br> 如果整个内核都不适合物理内存，则拥有虚拟内存可以使OS内核页面部分驻留在辅助存储（即磁盘）上。 实际上，这种情况不会发生（至少在Linux上是这样），因为最新的Linux内核大约只需要70 MB，这大大低于当今现代系统上可用的物理内存量。 此外，内核具有的数据和代码出于效率原因必须始终保存在主存储器中，并且还因为无法以其他方式处理页面错误。 想一想在发生页面错误时我们上面讨论的内容：OS内核（实际上是OS页面管理程序）控制系统，输入特定的中断服务例程（ISR）来处理页面错误，并将控制权交还给 产生页面错误的用户进程。 如果OS内核不完全适合主内存，则可能发生内核本身生成页面错误的情况。 在非常糟糕的情况下，这种页面错误可能例如使页面与页面错误处理例程的代码有关，从而阻塞了整个系统！ 因此，内核代码和数据始终是可寻址的（即，它永远不会产生页面错误），并随时可以处理中断或系统调用。</p>
 
       
     </div>
@@ -258,8 +264,9 @@
 <ul>
 <li>XCFramework不仅包含针对设备和模拟器的变体，而且还包含针对Xcode支持的任何平台的变体：iOS，macOS，tvOS，watchOS； </li>
 <li>它支持Swift和基于C的代码； </li>
-<li>可以打包框架和静态库。<br>借助Xcode 12中的新软件包清单API，现在可以制作包含一个或多个XCFrameworks的Swift软件包。 您可以在官方文档以<a target="_blank" rel="noopener" href="https://developer.apple.com/documentation/swift_packages/distributing_binary_frameworks_as_swift_packages">Swift软件包分发二进制框架</a>和<a target="_blank" rel="noopener" href="https://developer.apple.com/videos/play/wwdc2020/10147/">WWDC 2020视频</a>中找到实现的详细信息。<h3 id="Swift-Package"><a href="#Swift-Package" class="headerlink" title="Swift Package"></a>Swift Package</h3>Swift是一种跨平台语言，需要用于构建Swift代码的跨平台工具。  <a target="_blank" rel="noopener" href="https://swift.org/package-manager/#targetText=The%20Swift%20Package%20Manager%20is,in%20Swift%203.0%20and%20above.">Swift软件包管理器</a>（SwiftPM）的目标之一是简化Swift生态系统中的分发源代码。  SwiftPM是一个开源项目，您也可以在<a target="_blank" rel="noopener" href="https://github.com/apple/swift-package-manager">GitHub</a>上找到有关它的信息。<br>Swift Package包含源文件和清单文件（Package.swift）。 清单描述了Swift软件包的配置。  Swift Package是由<a target="_blank" rel="noopener" href="https://swift.org/package-manager/">Swift Package Manager</a>定义和使用的，其中包括<a target="_blank" rel="noopener" href="https://swift.org/package-manager/">Swift 3.0及更高版本</a>。 由于以源代码形式分发，因此不再需要维护客户端的二进制兼容性。 因此，如果您可以交付源代码，那么Swift Package是您的理想工具。 借助Xcode 11中的新更改，您可以轻松创建和分发Swift软件包。</li>
+<li>可以打包框架和静态库。<br>借助Xcode 12中的新软件包清单API，现在可以制作包含一个或多个XCFrameworks的Swift软件包。 您可以在官方文档以<a target="_blank" rel="noopener" href="https://developer.apple.com/documentation/swift_packages/distributing_binary_frameworks_as_swift_packages">Swift软件包分发二进制框架</a>和<a target="_blank" rel="noopener" href="https://developer.apple.com/videos/play/wwdc2020/10147/">WWDC 2020视频</a>中找到实现的详细信息。</li>
 </ul>
+<h3 id="Swift-Package"><a href="#Swift-Package" class="headerlink" title="Swift Package"></a>Swift Package</h3><p>Swift是一种跨平台语言，需要用于构建Swift代码的跨平台工具。  <a target="_blank" rel="noopener" href="https://swift.org/package-manager/#targetText=The%20Swift%20Package%20Manager%20is,in%20Swift%203.0%20and%20above.">Swift软件包管理器</a>（SwiftPM）的目标之一是简化Swift生态系统中的分发源代码。  SwiftPM是一个开源项目，您也可以在<a target="_blank" rel="noopener" href="https://github.com/apple/swift-package-manager">GitHub</a>上找到有关它的信息。<br>Swift Package包含源文件和清单文件（Package.swift）。 清单描述了Swift软件包的配置。  Swift Package是由<a target="_blank" rel="noopener" href="https://swift.org/package-manager/">Swift Package Manager</a>定义和使用的，其中包括<a target="_blank" rel="noopener" href="https://swift.org/package-manager/">Swift 3.0及更高版本</a>。 由于以源代码形式分发，因此不再需要维护客户端的二进制兼容性。 因此，如果您可以交付源代码，那么Swift Package是您的理想工具。 借助Xcode 11中的新更改，您可以轻松创建和分发Swift软件包。</p>
 <p>Swift软件包包括3个部分：依赖项，目标和产品：</p>
 <p>__依赖关系__：您在包内部使用的其他swift包。 在软件包文件中，每个依赖项都由源位置和版本指定。</p>
 <p>__目标__：如Apple的文档所述，<a target="_blank" rel="noopener" href="https://developer.apple.com/documentation/xcode/creating_a_swift_package_with_xcode">目标是包的基本组成部分</a>。既可以是库，也可以是可执行文件。 在Xcode 12 Swift软件包之前，只能包含Swift，Objective-C / C ++或C / C ++文件。  Xcode 12提供了新的tools-version：5.3，它带来了新的包清单API。 现在，Swift包可以包含其他资源类型：图像，storyboards，JSON文件，Shell脚本等等。 您还可以本地化这些资源。 这是很棒的，希望得到改进。 感谢所有为提供此功能做出贡献的人。 有用的详细信息和实现详细信息，可以在WWDC 2020视频Swift包中找到：<a target="_blank" rel="noopener" href="https://developer.apple.com/videos/play/wwdc2020/10169/">资源和本地化</a>，以及在文档<a target="_blank" rel="noopener" href="https://developer.apple.com/documentation/swift_packages/localizing_package_resources">Localizing Package Resources</a>中。</p>
@@ -276,8 +283,9 @@
 <ul>
 <li>1.（仅在Xcode 12之前）Swift软件包包含源代码，但不支持资产和资源。</li>
 <li>2.（仅在Xcode 12之前）Swift程序包只能依赖于其他Swift程序包，不支持二进制依赖性。</li>
-<li>3.源代码形式的分发不适用于不想共享源代码的框架提供程序。<br>显然，在为iOS应用程序选择静态库，框架或Swift包之间的体系结构时，应考虑每个特定项目的局限性。</li>
+<li>3.源代码形式的分发不适用于不想共享源代码的框架提供程序。</li>
 </ul>
+<p>显然，在为iOS应用程序选择静态库，框架或Swift包之间的体系结构时，应考虑每个特定项目的局限性。</p>
 <p>将太多的静态库链接到应用程序中会产生较大的应用程序可执行文件，启动时间较慢，并且内存占用量很大。 与静态库相比，框架可以为您提供更多的灵活性，它们可以包含资源。 但是，添加到项目中的每个嵌入式框架也会增加启动时间。<br>如果您可以发送源文件，则Swift软件包可能是您的正确选择。  Xcode将处理所有依赖项，版本控制和平台。</p>
 <h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>库是一个已编译的库文件，通常为二进制格式。 其他用户可以直接将其与一个或多个头文件一起使用。<br>库有两种类型：</p>
 <ul>
