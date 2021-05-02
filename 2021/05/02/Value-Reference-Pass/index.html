@@ -1,0 +1,165 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>按值传递与按引用传递 | Coding</title>
+
+  
+  <meta name="author" content="Rick Li">
+  
+
+  
+  <meta name="description" content="使用命令式编程语言（例如C）编写的计算机程序（如果使用C ++时不使用面向对象的样式，也可以使用C ++）广泛使用函数调用。 
+更准确地说，它们具有“标准”入口点函数（即main()），该函数封装了程序的整个逻辑（即计算流程）。 
+整个计算流程可以依次组织为几个孤立的“最小单元”，这些单元负责通过专">
+  
+
+  
+  
+  <meta name="keywords" content="C">
+  
+
+  <meta id="viewport" name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+  <meta property="og:title" content="按值传递与按引用传递"/>
+
+  <meta property="og:site_name" content="Coding"/>
+
+  
+  <meta property="og:image" content="/favicon.ico"/>
+  
+
+  <link href="/favicon.ico" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="Coding" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+
+<body>
+<div class="blog">
+  <div class="content">
+
+    <header>
+  <div class="site-branding">
+    <h1 class="site-title">
+      <a href="/">Coding</a>
+    </h1>
+    <p class="site-description"></p>
+  </div>
+  <nav class="site-navigation">
+    <ul>
+      
+    </ul>
+  </nav>
+</header>
+
+    <main class="site-main posts-loop">
+    <article>
+
+  
+    
+    <h3 class="article-title"><span>按值传递与按引用传递</span></h3>
+    
+  
+
+  <div class="article-top-meta">
+    <span class="posted-on">
+      <a href="/2021/05/02/Value-Reference-Pass/" rel="bookmark">
+        <time class="entry-date published" datetime="2021-05-02T04:03:10.000Z">
+          2021-05-02
+        </time>
+      </a>
+    </span>
+  </div>
+
+
+  
+
+  <div class="article-content">
+    <div class="entry">
+      
+        <p>使用命令式编程语言（例如C）编写的计算机程序（如果使用C ++时不使用面向对象的样式，也可以使用C ++）广泛使用函数调用。 </p>
+<p>更准确地说，它们具有“标准”入口点函数（即<code>main()</code>），该函数封装了程序的整个逻辑（即计算流程）。 </p>
+<p>整个计算流程可以依次组织为几个孤立的“最小单元”，这些单元负责通过专用功能完成更轻松的任务。 </p>
+<blockquote>
+<p>另外，该模式可以在每个专用功能内复制，从而生成功能的嵌套链。</p>
+</blockquote>
+<p>实现函数调用的一个关键方面是将参数从调用方传递给被调用方的方式。</p>
+<p>在本文中，我将探讨将参数传递给函数的两种最著名的方法：按值传递和按引用传递。<br>实际上，在谈论“按值传递”和“按引用传递”时，有一些棘手的问题需要清楚地理解。</p>
+<ul>
+<li> 按值传递: 简而言之，将参数按值传递给函数意味着该函数将拥有其自己的参数副本，即将参数的值从调用方复制到被调用方。 事实证明，修改该副本不会修改原始参数。</li>
+<li>按引用传递：相反，当通过引用传递时，函数内部的参数引用的是传入的同一对象。事实证明，从函数内部对该对象进行的任何更改也将在外部看到。</li>
+</ul>
+<p> 不幸的是，有两种使用短语“按价值传递”和“按引用传递”的方式，它们引起潜在的混乱。</p>
+<h2 id="C"><a href="#C" class="headerlink" title="C"></a>C</h2><p> 从技术上讲，在C语言中，所有事物都是按值传递的。 也就是说，无论您将什么作为函数的参数，它将被复制到该函数的作用域中。 例如，用<code>foo(x)</code>调用<code>void foo(int)</code>函数会将x的值复制为foo的参数。<br>让我们用一个交换两个变量内容的函数的著名示例更好地解释一下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">swap</span><span class="params">(<span class="keyword">int</span> x, <span class="keyword">int</span> y)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> tmp = x;</span><br><span class="line">    x = y;</span><br><span class="line">    y = tmp;</span><br><span class="line">&#125;</span><br><span class="line"> </span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> m = <span class="number">6</span>;</span><br><span class="line">    <span class="keyword">int</span> n = <span class="number">10</span>;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;Before swapping (m,n) evaluate to: (%d,%d)\n&quot;</span>,m,n);</span><br><span class="line">    swap(m,n);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;After swapping (m,n) evaluate to: (%d,%d)\n&quot;</span>,m,n); <span class="comment">// m and n still equal to their original values</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在上面的示例中，两个参数m，n从main方法m“复制”到函数swap的作用域中。 这意味着在该函数内发生的交换“有效”直到swap返回。 实际上，主体中的m，n仍保留其原始值。<br>但是，函数参数可以是任何类型（即，不仅是上述int之类的原始类型）。<br>在C语言中，非常有用的类型是指向其他类型的指针。 例如，我们可以定义以下内容：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> x = <span class="number">10</span>;</span><br><span class="line"><span class="keyword">int</span>* px = &amp;x;</span><br></pre></td></tr></table></figure>
+<p>第一个声明整数变量x的声明，而第二个声明 声明int *类型的变量px，即“指向整数的指针”。 此外，指针px通过引用运算符（＆）分配给整数变量x的地址。<br>要摆脱某种类型的变量和该类型的指针变量之间的区别，请参考下图：<br><img src="/2021/05/02/Value-Reference-Pass/pointer.png" alt="pointer"><br>现在，当将指针传递给函数时，您仍然按值传递它。 实际上，指针变量的值已复制到函数中。 在上面的示例中，这意味着将px的副本（即x地址（例如5678）的副本）传递给该函数。<br>事实证明，在函数内部修改该指针不会更改函数外部的指针（即，指针外部仍将包含x的地址）。 但是，如果您从函数内部修改了指针所指向的对象（即x），则对象本身也会在函数外部得到修改。 但为什么？</p>
+<p>由于具有相同值的两个指针（即原始指针和复制的指针）始终指向相同的对象（即它们包含相同的地址），因此可以通过这两个对象访问和修改所指向的对象。 尽管实际上没有引用存在，但这给出了通过引用传递指向对象（即x）的语义：简单地说，相对于C ++，C中没有引用。<br>让我们看一下我们的swap函数，该函数现在将两个指向整数的指针作为输入，而不是直接将两个整数作为输入：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">swap</span><span class="params">(<span class="keyword">int</span>* x, <span class="keyword">int</span>* y)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> tmp = *x; <span class="comment">// the * operator is used to &quot;de-reference&quot; the pointer </span></span><br><span class="line">                  <span class="comment">// i.e., to get the actual object which the pointer points to</span></span><br><span class="line">    *x = *y;</span><br><span class="line">    *y = tmp;</span><br><span class="line">&#125;</span><br><span class="line"> </span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> m = <span class="number">6</span>;</span><br><span class="line">    <span class="keyword">int</span> n = <span class="number">10</span>;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;Before swapping (m,n) evaluate to: (%d,%d)\n&quot;</span>,m,n);</span><br><span class="line">    swap(&amp;m,&amp;n); <span class="comment">// now swap takes two integer pointers as arguments</span></span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;After swapping (m,n) evaluate to: (%d,%d)\n&quot;</span>,m,n); <span class="comment">// m and n now have swapped their original values</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>因此，当将一个或多个指针传递给一个函数（即int * x，int * y）时，我们可能会指出它们所指向的相应对象（即分别为int x，int y）已“通过引用传递” 但实际上，这些物体实际上从未真正传递过任何地方。 这只是将其指针复制到函数中而产生的副作用，并且给我们口头含义是“按值传递”和“按引用传递”。<br> 该术语的用法由标准中的术语支持。 当您具有指针类型时，它所指向的类型称为其引用类型。 即，int <em>的引用类型为int。<br>另外，虽然一元运算符</em>（如* x和* y）在标准中被称为间接寻址，但通常也被称为对指针的解引用。 这进一步（误导）促进了C语言中“通过引用传递”的概念。</p>
+<h2 id="C-1"><a href="#C-1" class="headerlink" title="C++"></a>C++</h2><p>C++采纳了C语言的许多原始语言功能。其中包括指针，因此这种“按引用传递”的通俗形式仍然可以使用，即上面定义的交换函数，该函数接受指针并通过取消引用运算符交换其值（  *）仍然有效。<br>但是，将此术语与C ++一起使用可能会造成混淆，因为C ++引入了C所不具备的功能：能够真正传递引用。<br> 后跟与符号（＆）的类型是参考类型。 例如，int＆是对int的引用。 当将参数传递给采用引用类型的函数时，该对象实际上是通过引用传递的。 没有指针，也没有对象的复制。 绑定在函数主体内部的名称实际上是指与传入对象完全相同的对象。与指针的差异可能看起来很细微，但实际上是基本的。<br>如果使用引用类型而不是指针作为输入参数，则swap函数看起来如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// the ampersand operator (&amp;) states that both the input arguments to this function</span></span><br><span class="line"><span class="comment">// will actually be references to the arguments used during function call  </span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">swap</span><span class="params">(<span class="keyword">int</span>&amp; x, <span class="keyword">int</span>&amp; y)</span> </span>&#123;  </span><br><span class="line">    <span class="keyword">int</span> tmp = x;</span><br><span class="line">    x = y;</span><br><span class="line">    y = tmp;</span><br><span class="line">&#125;</span><br><span class="line"> </span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> m = <span class="number">6</span>;</span><br><span class="line">    <span class="keyword">int</span> n = <span class="number">10</span>;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;Before swapping (m,n) evaluate to: (%d,%d)\n&quot;</span>,m,n);</span><br><span class="line">    swap(m,n); <span class="comment">// we now invoke the function on the two integer types</span></span><br><span class="line">               <span class="comment">// but in fact their corresponding reference types will be passed to the swap function</span></span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;After swapping (m,n) evaluate to: (%d,%d)\n&quot;</span>,m,n); <span class="comment">// m and n now have swapped their original values</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在上面的示例中，没有按值传递任何内容，也没有复制任何内容。<br>与C语言不同，在C语言中，按引用传递是仅按值传递指针的“副作用”，而在C ++中，我们可以通过引用自然地传递。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>某种程度上，这仅是编程语言如何真正实现“按引用传递”的概念的问题：</p>
+<ul>
+<li>C通过使用指针并将其按值传递给函数来实现这一点</li>
+<li>C ++提供了两种实现。 从一方面讲，它重用了从C派生的相同机制（即指针+按值传递）。</li>
+<li>C ++还提供了本机的“按引用传递”解决方案，该解决方案利用了引用类型的思想。 因此，即使在C ++中，即使您要传递一个C指针，也并不是真正按引用传递，而是按值传递指针（当然，除非您将指针传递给引用！例如，int）。  *＆）。</li>
+</ul>
+<p>由于“按引用传递”一词可能存在歧义，因此最好在使用引用类型时仅在C ++上下文中使用它。<br>但是，当使用指针+“按值传递”时，您可能会遇到“按引用传递”的用法，但是现在至少您知道实际情况是什么！</p>
+
+      
+    </div>
+
+  </div>
+
+  <div class="article-footer">
+    <div class="article-meta pull-left">
+
+    
+
+    
+    
+
+    <span class="post-tags">
+      <i class="icon-tags"></i>
+        <a href="/tags/C/">C</a>
+    </span>
+    
+
+    </div>
+
+    
+  </div>
+</article>
+
+  
+
+
+
+
+
+
+    </main>
+
+    <footer class="site-footer">
+  <p class="site-info">
+    Proudly powered by <a href="https://hexo.io/" target="_blank">Hexo</a> and
+    Theme by <a href="https://github.com/CodeDaraW/Hacker" target="_blank">Hacker</a>
+    </br>
+    
+    &copy; 2021 Rick Li
+    
+  </p>
+</footer>
+    
+    
+  </div>
+</div>
+</body>
+</html>
