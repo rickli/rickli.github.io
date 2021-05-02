@@ -1,0 +1,148 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>虚拟内存，分页和交换 | CodingBlog</title>
+
+  
+  <meta name="author" content="Rick Li">
+  
+
+  
+  <meta name="description" content="VM虚拟内存是一种使用硬件（MMU）和软件（操作系统）实现的内存管理技术。 通过引入虚拟地址空间的概念，它从系统上可用的实际内存中抽象出来，该概念允许每个进程将物理内存视为连续的地址空间（或连续的段的集合）。虚拟内存的目标是将执行程序生成的虚拟内存地址映射到计算机内存中的物理地址。 这涉及两个主要方">
+  
+
+  
+  
+  <meta name="keywords" content="OS">
+  
+
+  <meta id="viewport" name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+  <meta property="og:title" content="虚拟内存，分页和交换"/>
+
+  <meta property="og:site_name" content="CodingBlog"/>
+
+  
+  <meta property="og:image" content="/favicon.ico"/>
+  
+
+  <link href="/favicon.ico" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="CodingBlog" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+
+<body>
+<div class="blog">
+  <div class="content">
+
+    <header>
+  <div class="site-branding">
+    <h1 class="site-title">
+      <a href="/">CodingBlog</a>
+    </h1>
+    <p class="site-description"></p>
+  </div>
+  <nav class="site-navigation">
+    <ul>
+      
+    </ul>
+  </nav>
+</header>
+
+    <main class="site-main posts-loop">
+    <article>
+
+  
+    
+    <h3 class="article-title"><span>虚拟内存，分页和交换</span></h3>
+    
+  
+
+  <div class="article-top-meta">
+    <span class="posted-on">
+      <a href="/2021/05/02/VM-Page-Swap/" rel="bookmark">
+        <time class="entry-date published" datetime="2021-05-02T03:37:43.000Z">
+          2021-05-02
+        </time>
+      </a>
+    </span>
+  </div>
+
+
+  
+
+  <div class="article-content">
+    <div class="entry">
+      
+        <h2 id="VM"><a href="#VM" class="headerlink" title="VM"></a>VM</h2><p>虚拟内存是一种使用硬件（MMU）和软件（操作系统）实现的内存管理技术。 通过引入虚拟地址空间的概念，它从系统上可用的实际内存中抽象出来，该概念允许每个进程将物理内存视为连续的地址空间（或连续的段的集合）。<br>虚拟内存的目标是将执行程序生成的虚拟内存地址映射到计算机内存中的物理地址。 这涉及两个主要方面：地址转换（从虚拟到物理）和虚拟地址空间管理。</p>
+<ul>
+<li>地址转换:前者通过称为内存管理单元或MMU的特定硬件元素在CPU芯片上实现。</li>
+<li>虚拟地址空间管理:由操作系统提供，设置虚拟地址空间（即，用于所有进程的单个虚拟空间或用于每个进程的一个虚拟空间），并实际将实际内存分配给虚拟内存。</li>
+</ul>
+<blockquote>
+<p>此外，操作系统内的软件可以提供虚拟地址空间，该虚拟地址空间可以超过主存储器的实际容量（即，也使用辅助存储器），因此可以引用比系统中物理上存在的更多的存储器。</p>
+</blockquote>
+<p> 虚拟内存的主要好处包括：使应用程序（和程序员）不必管理共享的内存空间；由于内存隔离而提高了安全性；以及使用分页技术，在概念上可以使用比物理上可用的更多的内存。 实际上，几乎每种虚拟内存实现都将虚拟地址空间划分为连续的虚拟内存地址块，称为页面，通常大小为4 KB。<br>为了将进程的虚拟地址转换为硬件用来实际处理指令的物理内存地址，MMU使用了所谓的页表，即由OS管理的数据结构，用于存储虚拟地址和物理地址之间的映射 。<br>具体而言，MMU存储了整个OS页表中存储的映射中最近使用的映射的缓存，这称为转换后备缓冲区（TLB）。<br>下图描述了如上所述的地址转换任务。<br><img src="/2021/05/02/VM-Page-Swap/mmu.jpeg" alt="mmu"><br>当虚拟地址需要转换为物理地址时，MMU首先在TLB缓存中搜索它（上图中的步骤1.）。 如果找到匹配项（即TLB命中），则返回物理地址，然后继续进行计算（2.a.）。 相反，如果在TLB高速缓存中虚拟地址不匹配（即TLB未命中），则MMU在整个页表中搜索匹配，即页面遍历（2.b.）。 如果页表上存在此匹配项，则将其相应地写入TLB缓存（3.a.）。 因此，地址转换将重新启动，以便MMU能够在更新的TLB（1＆2.a.）上找到匹配项。<br>不幸的是，页表查找可能由于两个原因而失败。 </p>
+<ul>
+<li>第一个是指定的虚拟地址没有有效的转换时（例如，当进程尝试访问它无法请求的内存区域时）。 </li>
+<li>否则，如果此时未将请求的页面加载到主存储器中，则可能会发生这种情况（相应页面表条目上的相应标志指示这种情况）。<br>在这两种情况下，控件都从MMU（硬件）传递到页面管理器（操作系统内核的软件组件）。 在第一种情况下，页面管理程序通常会引发分段错误异常（3.b.）。 在第二种情况下，发生页面错误（3.c.），这意味着必须从当前存储该页面的辅助存储（即磁盘）中检索请求的页面。 因此，页面管理器访问磁盘，将与引起页面错误的虚拟地址相对应的页面重新存储在主存储器中（4.），并使用虚拟地址和物理地址之间的新映射来更新页面表和TLB。 地址已存储页面的位置（3.a.），最后告诉MMU重新开始该请求，以便发生TLB命中（1＆2.a.）。<br>事实证明，上述任务一直有效，直到主内存中有足够的空间来存储从磁盘返回的页面为止。 <blockquote>
+<p>但是，当所有物理内存都用完时，页面管理器还必须释放主内存中的页面以允许存储来自磁盘的传入页面。<br>为了公平地确定要从主内存移动到磁盘的页面，页面调度管理程序可以使用几种页面替换算法，例如最近最少使用（LRU）。 一般而言，将页面从/从辅助存储器移动到/从主存储器移动页面称为交换（4.），这就是为什么可能会发生页面错误的原因。<br>现在让我们回到在典型的32位Linux操作系统上OS内核和用户模式虚拟内存空间之间的分离，这已在<a href="todo">程序（进程）的内存中布局</a>中介绍，并在下面进行了介绍。<br><img src="/2021/05/02/VM-Page-Swap/memory_layout.jpeg" alt="memory_layout"><br>这并不意味着内核会使用那么多物理内存。 相反，这只是虚拟地址空间的一部分，可用于映射OS内核希望的任何物理内存，并且它与可用物理内存的大小正交。<br>还要注意，在Linux中，内核空间一直存在，并且在所有进程中都映射相同的物理内存，这意味着内核空间不会改变，并且在任何进程上下文切换中都映射到相同的物理内存地址。<br>按照上面的拆分规则，内核具有专用的1 GB内核虚拟地址空间，并且无论它进行什么分配，它始终使用那些地址集。 虚拟地址到物理内存地址的实际映射完全通过硬件（即MMU）和软件（即OS页面管理程序）的组合进行了上述流程。<br>假设系统X拥有512 MB的物理内存，则仅将整个1 GB虚拟空间中的512 MB映射为内核地址空间，而其余512 MB虚拟地址未映射。 另一方面，如果X具有2 GB的物理内存，则整个1 GB的虚拟地址将被映射到物理地址。<br>如果整个内核都不适合物理内存，则拥有虚拟内存可以使OS内核页面部分驻留在辅助存储（即磁盘）上。 实际上，这种情况不会发生（至少在Linux上是这样），因为最新的Linux内核大约只需要70 MB，这大大低于当今现代系统上可用的物理内存量。 此外，内核具有的数据和代码出于效率原因必须始终保存在主存储器中，并且还因为无法以其他方式处理页面错误。 想一想在发生页面错误时我们上面讨论的内容：OS内核（实际上是OS页面管理程序）控制系统，输入特定的中断服务例程（ISR）来处理页面错误，并将控制权交还给 产生页面错误的用户进程。 如果OS内核不完全适合主内存，则可能发生内核本身生成页面错误的情况。 在非常糟糕的情况下，这种页面错误可能例如使页面与页面错误处理例程的代码有关，从而阻塞了整个系统！ 因此，内核代码和数据始终是可寻址的（即，它永远不会产生页面错误），并随时可以处理中断或系统调用。</p>
+</blockquote>
+</li>
+</ul>
+
+      
+    </div>
+
+  </div>
+
+  <div class="article-footer">
+    <div class="article-meta pull-left">
+
+    
+
+    
+    
+
+    <span class="post-tags">
+      <i class="icon-tags"></i>
+        <a href="/tags/OS/">OS</a>
+    </span>
+    
+
+    </div>
+
+    
+  </div>
+</article>
+
+  
+
+
+
+
+
+
+    </main>
+
+    <footer class="site-footer">
+  <p class="site-info">
+    Proudly powered by <a href="https://hexo.io/" target="_blank">Hexo</a> and
+    Theme by <a href="https://github.com/CodeDaraW/Hacker" target="_blank">Hacker</a>
+    </br>
+    
+    &copy; 2021 Rick Li
+    
+  </p>
+</footer>
+    
+    
+  </div>
+</div>
+</body>
+</html>

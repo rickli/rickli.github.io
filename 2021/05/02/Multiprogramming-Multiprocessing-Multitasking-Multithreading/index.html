@@ -1,0 +1,155 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>多程序，多处理，多任务和多线程 | CodingBlog</title>
+
+  
+  <meta name="author" content="Rick Li">
+  
+
+  
+  <meta name="description" content="当您使用操作系统概念时，可能会有一些令人困惑的术语，看起来很相似，但实际上是指不同的概念。在本文中，我将尝试阐明经常引起困惑的四个此类术语：多程序设计，多处理，多任务和多线程。在现代计算系统中，通常有多个并发的应用程序进程争用（很少）资源，例如CPU。 正如我们已经介绍的那样，操作系统（OS）除其他">
+  
+
+  
+  
+  <meta name="keywords" content="OS">
+  
+
+  <meta id="viewport" name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+  <meta property="og:title" content="多程序，多处理，多任务和多线程"/>
+
+  <meta property="og:site_name" content="CodingBlog"/>
+
+  
+  <meta property="og:image" content="/favicon.ico"/>
+  
+
+  <link href="/favicon.ico" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="CodingBlog" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+
+<body>
+<div class="blog">
+  <div class="content">
+
+    <header>
+  <div class="site-branding">
+    <h1 class="site-title">
+      <a href="/">CodingBlog</a>
+    </h1>
+    <p class="site-description"></p>
+  </div>
+  <nav class="site-navigation">
+    <ul>
+      
+    </ul>
+  </nav>
+</header>
+
+    <main class="site-main posts-loop">
+    <article>
+
+  
+    
+    <h3 class="article-title"><span>多程序，多处理，多任务和多线程</span></h3>
+    
+  
+
+  <div class="article-top-meta">
+    <span class="posted-on">
+      <a href="/2021/05/02/Multiprogramming-Multiprocessing-Multitasking-Multithreading/" rel="bookmark">
+        <time class="entry-date published" datetime="2021-05-02T03:12:47.000Z">
+          2021-05-02
+        </time>
+      </a>
+    </span>
+  </div>
+
+
+  
+
+  <div class="article-content">
+    <div class="entry">
+      
+        <p>当您使用操作系统概念时，可能会有一些令人困惑的术语，看起来很相似，但实际上是指不同的概念。<br>在本文中，我将尝试阐明经常引起困惑的四个此类术语：多程序设计，多处理，多任务和多线程。<br>在现代计算系统中，通常有多个并发的应用程序进程争用（很少）资源，例如CPU。 正如我们已经介绍的那样，操作系统（OS）除其他职责外，还负责有效和高效地分配这些资源。 一般来说，处理资源分配的OS模块称为调度程序。 根据要实现的OS的类型，可以实现不同的调度策略。</p>
+<h2 id="多程序设计"><a href="#多程序设计" class="headerlink" title="多程序设计"></a>多程序设计</h2><p>在多程序系统中，主存储器中已加载一个或多个准备执行的程序。</p>
+<p>一次只有一个程序能够使CPU执行其指令（即，系统上最多有一个进程正在运行），而其他所有程序都在等待它们的执行。</p>
+<p>多程序设计的主要思想是最大限度地利用CPU时间。 假设当前正在运行的进程正在执行I / O任务（根据定义，它不需要完成CPU）。 然后，OS可能会中断该进程并将控制权交给准备执行的其他主内存程序之一（即进程上下文切换）。 这样，系统不会在等待I / O任务完成之前浪费CPU时间，并且运行的进程会一直执行，直到它自愿释放CPU或阻塞以进行I / O操作为止。 </p>
+<p>因此，多程序设计的最终目标是只要有准备好执行的进程，就能使CPU保持忙碌状态。</p>
+<p>请注意，为了使这样的系统正常运行，操作系统必须能够将多个程序加载到主内存的单独区域中，并提供所需的保护，以避免一个进程被另一个进程修改的机会。 </p>
+<p>当程序中有多个程序进入或离开主存储器时，在内存中有多个程序时需要解决的其他问题是碎片化。</p>
+<p>同样需要处理的另一个问题是大型程序可能无法一次放入内存中，这可以通过使用分页和虚拟内存来解决。 请参考<a href="todo">这篇文章</a>，以获取更多详细信息。<br>最后，请注意，如果有N个就绪的进程，并且所有进程都受到CPU高度限制（即，它们大部分执行CPU任务，并且没有I / O操作或很少有I / O操作），那么在最坏的情况下，一个程序可能会等待所有其他程序 N-1个要在执行之前完成。</p>
+<h2 id="多处理"><a href="#多处理" class="headerlink" title="多处理"></a>多处理</h2><p>多处理有时是指同时执行多个进程（程序）。 这可能会引起误解，因为我们之前已经引入了“多程序”一词来描述。</p>
+<p>实际上，多处理是指硬件（即CPU单元）而不是软件（即正在运行的进程）。 如果底层硬件提供了多个处理器，那么这就是多处理。 存在基本方案的几种变型，例如，一个管芯上的多个核或一个封装中的多个管芯或一个系统中的多个封装。</p>
+<p>无论如何，可以通过使多个程序同时运行来对系统进行多程序处理，也可以通过具有一个以上的物理处理器来对系统进行多处理。多核CPU可以同时执行多个进程。</p>
+<h2 id="多任务"><a href="#多任务" class="headerlink" title="多任务"></a>多任务</h2><p>多任务处理具有与多程序设计相同的含义，但是从更一般的意义上讲，因为它指的是同时运行多个（程序，进程，任务，线程）。 当多个任务共享一个共同的处理资源（例如，CPU和内存）时，该术语在现代操作系统中使用。 </p>
+<p>在任何时候，CPU仅在其他任务等待轮流执行时才执行一个任务。当将CPU重新分配给另一个任务时（即进程或线程上下文切换），就可以实现并行性的错觉。</p>
+<p>多任务和多编程之间存在细微的差异。 多任务操作系统中的任务不是整个应用程序，但是当一个进程分为子任务时，它也可以称为“执行线程”。 每个较小的任务都不会像以前的多程序一样完成CPU的劫持，而是占用相当一部分的CPU时间（称为量子）。</p>
+<p>为了易于记忆，多程序和多任务操作系统都是（CPU）时间共享系统。 </p>
+<p>但是，在多程序（较旧的OS）中，一个程序作为一个整体会一直运行直到阻塞为止，而在多任务（现代OS）中，时间共享是最好的体现，因为每个运行的进程仅占用相当一部分CPU时间。</p>
+<h2 id="多线程"><a href="#多线程" class="headerlink" title="多线程"></a>多线程</h2><p>到现在为止，我们已经讨论了多程序设计，它是一种允许多个程序驻留在主内存中并且（显然）同时运行的方法。 然后，多任务处理是指通过共享CPU时间同时（显然）同时运行的多个任务。 最后，多核处理描述了具有多个CPU的系统。 那么，多线程从何而来呢？</p>
+<p><strong>多线程</strong> 是一种执行模型，它允许单个进程在该进程的“上下文”内同时运行多个代码段（即线程）。 您可以将线程视为共享父流程资源但独立执行的子流程。 </p>
+<p>单个进程的多个线程可以在单个CPU系统中共享CPU，或者（完全）在多处理系统中并行运行。为什么我们需要在单个进程上下文中拥有多个执行线程？</p>
+<p>好吧，例如考虑一个GUI应用程序，用户可以在其中发出需要很长时间才能完成的命令（例如，复杂的数学计算）。 除非您将此命令设计为在单独的执行线程中运行，否则您将无法与主应用程序GUI进行交互（例如，更新进度条），因为在进行计算时该命令将无响应。</p>
+<p>当然，设计多线程/并发应用程序需要程序员处理开发单线程顺序应用程序时根本不会发生的情况。 例如，当两个或多个线程尝试访问和修改共享资源（竞争条件）时，程序员必须确保这不会使系统处于不一致或死锁状态。 通常，此线程同步是使用OS原语（例如互斥体和sempaphores）解决的。</p>
+<h3 id="有关上下文切换的附带说明"><a href="#有关上下文切换的附带说明" class="headerlink" title="有关上下文切换的附带说明"></a>有关上下文切换的附带说明</h3><p>上下文切换的概念适用于多程序设计以及多任务，但粒度不同。 在前者中，“上下文”是指整个过程的上下文，而在后者中，“上下文”可能是较轻的线程的上下文。 实际上，进程上下文切换涉及切换虚拟内存地址空间：这包括内存地址，映射，页表和内核资源。 另一方面，线程上下文切换是在同一进程中从一个线程切换到另一个线程的上下文切换（即，无需切换虚拟内存地址空间，因为“切换器”和“切换者”线程共享相同的虚拟地址空间）  ）。 这需要切换处理器状态（例如程序计数器和寄存器内容），这通常非常有效。<br>当然，跨不同进程在线程之间切换就像进程上下文切换一样。</p>
+<h2 id="Program-vs-Process"><a href="#Program-vs-Process" class="headerlink" title="Program vs. Process"></a>Program vs. Process</h2><p>实际上，这是一个“微妙”的问题，因为有时会误将这两个术语用于指代相同的概念。<br>此外，这是面试官在您申请软件工程师职位时可能会提出的“经典”问题之一。<br> 简而言之，程序是一个可执行文件，驻留在辅助持久性存储器（即磁盘）上，并且仅包含完成特定工作所需的指令集。 例如，ls程序是一个可执行文件，存储在运行类Unix操作系统的系统磁盘上的/ bin / ls中。<br>相反，当被加载到主存储器时，进程是程序的特定执行实例，即，在程序内收集的那些指令的实际执行。 例如，您可能在上面的ls程序中有多个正在运行的实例，因此同一程序有多个进程。 事实证明，可以将程序视为“静态/被动”实体，而将流程视为“动态/主动”实体。<br> 通常，一个进程由以下资源组成：<br> –内存，包括可执行代码的映像，特定于进程的数据（输入和输出），调用堆栈（以跟踪活动子例程和/或其他事件）， 还有一个堆，用于保存在运行时生成的中间计算数据。<br>–分配给进程的资源的操作系统描述符，例如文件描述符（Unix术语）或句柄（Windows）。<br>–安全属性，例如流程所有者和流程的权限集。<br>–处理器状态（即上下文），例如寄存器的内容，物理存储器的寻址等。状态通常在进程执行时存储在计算机寄存器中，否则存储在主存储器中。<br>操作系统将有关活动进程的大多数此类信息保存在称为“进程控制块（PCB）”的数据结构中。</p>
+
+      
+    </div>
+
+  </div>
+
+  <div class="article-footer">
+    <div class="article-meta pull-left">
+
+    
+
+    
+    
+
+    <span class="post-tags">
+      <i class="icon-tags"></i>
+        <a href="/tags/OS/">OS</a>
+    </span>
+    
+
+    </div>
+
+    
+  </div>
+</article>
+
+  
+
+
+
+
+
+
+    </main>
+
+    <footer class="site-footer">
+  <p class="site-info">
+    Proudly powered by <a href="https://hexo.io/" target="_blank">Hexo</a> and
+    Theme by <a href="https://github.com/CodeDaraW/Hacker" target="_blank">Hacker</a>
+    </br>
+    
+    &copy; 2021 Rick Li
+    
+  </p>
+</footer>
+    
+    
+  </div>
+</div>
+</body>
+</html>
