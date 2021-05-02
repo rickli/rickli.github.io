@@ -1,0 +1,157 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Understanding Memory Layout in iOS | </title>
+
+  
+  <meta name="author" content="Rick Li">
+  
+
+  
+  <meta name="description" content="内存是指存储信息以供计算机立即使用的计算机硬件集成电路。 计算机内存用于存储位模式。 不仅数据而且指令也是位模式，这些位模式可以存储在存储器中。 在系统软件中，它们存储在单独的内存段中。 这些段也按数据和程序类型进行划分。
+多任务OS在虚拟地址空间中运行。 在64位系统的情况下，内存地址分配了8个字">
+  
+
+  
+  
+  <meta name="keywords" content="iOS">
+  
+
+  <meta id="viewport" name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+  <meta property="og:title" content="Understanding Memory Layout in iOS"/>
+
+  <meta property="og:site_name" content=""/>
+
+  
+  <meta property="og:image" content="/favicon.ico"/>
+  
+
+  <link href="/favicon.ico" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+
+<body>
+<div class="blog">
+  <div class="content">
+
+    <header>
+  <div class="site-branding">
+    <h1 class="site-title">
+      <a href="/"></a>
+    </h1>
+    <p class="site-description"></p>
+  </div>
+  <nav class="site-navigation">
+    <ul>
+      
+    </ul>
+  </nav>
+</header>
+
+    <main class="site-main posts-loop">
+    <article>
+
+  
+    
+    <h3 class="article-title"><span>Understanding Memory Layout in iOS</span></h3>
+    
+  
+
+  <div class="article-top-meta">
+    <span class="posted-on">
+      <a href="/2021/05/01/Understanding-Memory-Layout/" rel="bookmark">
+        <time class="entry-date published" datetime="2021-05-01T06:04:27.000Z">
+          2021-05-01
+        </time>
+      </a>
+    </span>
+  </div>
+
+
+  
+
+  <div class="article-content">
+    <div class="entry">
+      
+        <p>内存是指存储信息以供计算机立即使用的计算机硬件集成电路。 计算机内存用于存储位模式。 不仅数据而且指令也是位模式，这些位模式可以存储在存储器中。 在系统软件中，它们存储在单独的内存段中。 这些段也按数据和程序类型进行划分。</p>
+<p>多任务OS在虚拟地址空间中运行。 在64位系统的情况下，内存地址分配了8个字节，对于32位系统，分配了4个字节，对于16位系统，分配了2个字节。 此值称为地址大小，CPU可寻址的最小单位为1字节（8位）。</p>
+<p>程序运行时，将在系统上称为内核空间和用户空间的两个空间中执行处理。 这两个处理空间彼此隐式地相互干扰，并且程序的处理继续进行。</p>
+<ul>
+<li><strong>内核空间</strong><br>用户进程只能通过使用系统调用来访问内核空间，这些系统调用是类Unix操作系统中的请求，例如输入/输出（I / O）或进程创建。</li>
+<li><strong>用户空间</strong><br>用户空间是分配给用户的计算资源，并且是执行程序可以直接访问的资源。 该空间可以分为几个部分。<h3 id="程序中的内存布局"><a href="#程序中的内存布局" class="headerlink" title="程序中的内存布局"></a>程序中的内存布局</h3>下图显示了内核空间和用户空间的虚拟内存空间。 虚拟空间的用户空间部分分为栈和堆，BSS，数据，文本。<br><img src="/2021/05/01/Understanding-Memory-Layout/memory_lauout.png" alt="memory layout"><h4 id="Stack"><a href="#Stack" class="headerlink" title="Stack"></a>Stack</h4>栈空间位于OS内核空间的正下方，通常与堆区域相对，并向下扩展到较低的地址。  （在其他一些架构上可能会朝相反的方向发展）<br>栈是LIFO（后进先出）数据结构。 在计算机科学中，栈是一种抽象数据类型，它是元素的集合，具有两个主要操作：</li>
+<li>push（将元素添加到集合中）</li>
+<li>pop（弹出）将删除最近添加的尚未删除的元素。<br>该区域专用于在程序中存储函数调用所需的所有数据。 调用函数与将被调用函数的执行推入栈顶部相同，一旦该函数完成，将返回结果，将函数从堆栈中弹出。 推送给函数调用的数据集称为栈帧，其中包含以下数据。</li>
+<li>传递给常规程序的参数（参数值）</li>
+<li>将返回地址返回给例程的调用方，</li>
+<li>程序的局部变量分配的空间<br>以下是C程序的示例和栈存储器分配的图片。<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">int</span> result = getResult();</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">getResult</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">int</span> num1 = getNum1();</span><br><span class="line">  <span class="keyword">int</span> num2 = getNum2();</span><br><span class="line">  <span class="keyword">return</span> num1 + num2;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">getNum1</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="number">10</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">getNum2</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="number">20</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+调用该函数时，栈帧被推到栈的顶部。 然后执行该过程，函数超出范围，栈帧从顶部弹出。<br><img src="/2021/05/01/Understanding-Memory-Layout/stack_pop_flow.png" alt="stack_pop_flow"><br>如上所述，它只能存储有限范围的数据。 但是，在内存管理中，它运行非常快，因为栈指针寄存器仅跟踪栈的顶部。<h4 id="Heap"><a href="#Heap" class="headerlink" title="Heap"></a>Heap</h4>堆是通常进行动态内存分配的段。 该区域通常从BSS段的末尾开始，然后向上扩展到更高的内存地址。 在C语言中，它由malloc / new，free / delete管理，后者使用brk和sbrk系统调用来调整其大小。<br>在以下情况下，将分配到堆区域。</li>
+<li>内存大小在运行时动态分配</li>
+<li>范围不受限制。  （例如，从多个地方引用的变量）</li>
+<li>内存大小非常大。<br>释放堆内存是我们的责任。 如果不释放堆中的对象，则会导致内存泄漏。 在垃圾回收语言中，垃圾回收器释放堆上的内存并防止内存泄漏。</li>
+</ul>
+<p>可以通过重复分配和释放区域来在堆上生成未使用区域。 将“未使用的节点”和“正在使用”的节点混合的状态，即未使用区域被垃圾分割成碎片的状态称为碎片状态。 在这种状态下，搜索可用空间的开销以及数据“参考位置”的性能下降，因此性能相对较低。</p>
+<h4 id="BSS（Block-Started-by-Symbol）"><a href="#BSS（Block-Started-by-Symbol）" class="headerlink" title="BSS（Block Started by Symbol）"></a>BSS（Block Started by Symbol）</h4><p>未初始化的数据段，通常称为BSS段。 在程序开始执行之前，内核将此段中的数据初始化为算术0。 例如，声明为static int i的变量； 将分配给BSS段。</p>
+<h4 id="Data"><a href="#Data" class="headerlink" title="Data"></a>Data</h4><p>数据段包含已初始化的全局变量和静态变量，这些变量具有预定义的值并且可以修改。 它分为只读空间和读写空间。<br>例如下面的C程序main函数外</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">int</span> val = <span class="number">3</span>;</span><br><span class="line"><span class="keyword">char</span> <span class="built_in">string</span>[] = <span class="string">&quot;Hello World&quot;</span>;</span><br></pre></td></tr></table></figure>
+<h4 id="Text"><a href="#Text" class="headerlink" title="Text"></a>Text</h4><p>存储机器语言指令的段。 该段是只读空间。</p>
+<h4 id="Stack-vs-Heap"><a href="#Stack-vs-Heap" class="headerlink" title="Stack vs Heap"></a>Stack vs Heap</h4><p>栈速度更快，因为所有可用内存始终是连续的。 与堆不同，没有列表需要保留所有可用内存的列表，只有一个指针指向栈的当前顶部。 栈中的每个字节都倾向于被非常频繁地重用，这意味着它倾向于被映射到处理器的高速缓存中，从而使其非常快。 因此，只要您不需要使用堆，我建议您使用栈。</p>
+<h4 id="系统动态库所在的内存布局呢"><a href="#系统动态库所在的内存布局呢" class="headerlink" title="系统动态库所在的内存布局呢"></a>系统动态库所在的内存布局呢</h4><p>TODO</p>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><p><a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Data_segment">Data Segment</a><br><a target="_blank" rel="noopener" href="https://gabrieletolomei.wordpress.com/miscellanea/operating-systems/in-memory-layout/">In-Memory Layout of a Program (Process)</a><br><a target="_blank" rel="noopener" href="https://www.geeksforgeeks.org/memory-layout-of-c-program/">Memory Layout Of C Program</a><br><a target="_blank" rel="noopener" href="https://www.usna.edu/Users/cs/aviv/classes/ic221/s16/lec/08/lec.html">Memory Alloc And Program Memory Layout</a></p>
+
+      
+    </div>
+
+  </div>
+
+  <div class="article-footer">
+    <div class="article-meta pull-left">
+
+    
+
+    
+    
+
+    <span class="post-tags">
+      <i class="icon-tags"></i>
+        <a href="/tags/iOS/">iOS</a>
+    </span>
+    
+
+    </div>
+
+    
+  </div>
+</article>
+
+  
+
+
+
+
+
+
+    </main>
+
+    <footer class="site-footer">
+  <p class="site-info">
+    Proudly powered by <a href="https://hexo.io/" target="_blank">Hexo</a> and
+    Theme by <a href="https://github.com/CodeDaraW/Hacker" target="_blank">Hacker</a>
+    </br>
+    
+    &copy; 2021 Rick Li
+    
+  </p>
+</footer>
+    
+    
+  </div>
+</div>
+</body>
+</html>

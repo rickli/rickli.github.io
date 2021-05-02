@@ -1,0 +1,208 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>静态库、动态库、Swift Package？ | </title>
+
+  
+  <meta name="author" content="Rick Li">
+  
+
+  
+  <meta name="description" content="每个开发人员都知道在项目中支持干净架构的重要性。 偏好模块化代码库以独占应用程序的原因显而易见。 它们是命名空间，访问控制，在不同的模块中使用不同的编程语言。 当然，还有代码重用。
+在本文中，我们将讨论基于iOS Swift的项目中支持模块化代码库的选项，其中包括：
+
+librarys; 
+框架，包">
+  
+
+  
+  
+  <meta name="keywords" content="iOS">
+  
+
+  <meta id="viewport" name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, minimal-ui">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+  <meta property="og:title" content="静态库、动态库、Swift Package？"/>
+
+  <meta property="og:site_name" content=""/>
+
+  
+  <meta property="og:image" content="/favicon.ico"/>
+  
+
+  <link href="/favicon.ico" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+<meta name="generator" content="Hexo 5.4.0"></head>
+
+
+<body>
+<div class="blog">
+  <div class="content">
+
+    <header>
+  <div class="site-branding">
+    <h1 class="site-title">
+      <a href="/"></a>
+    </h1>
+    <p class="site-description"></p>
+  </div>
+  <nav class="site-navigation">
+    <ul>
+      
+    </ul>
+  </nav>
+</header>
+
+    <main class="site-main posts-loop">
+    <article>
+
+  
+    
+    <h3 class="article-title"><span>静态库、动态库、Swift Package？</span></h3>
+    
+  
+
+  <div class="article-top-meta">
+    <span class="posted-on">
+      <a href="/2021/05/01/Library-Difference/" rel="bookmark">
+        <time class="entry-date published" datetime="2021-05-01T06:43:18.000Z">
+          2021-05-01
+        </time>
+      </a>
+    </span>
+  </div>
+
+
+  
+
+  <div class="article-content">
+    <div class="entry">
+      
+        <p>每个开发人员都知道在项目中支持干净架构的重要性。 偏好模块化代码库以独占应用程序的原因显而易见。 它们是命名空间，访问控制，在不同的模块中使用不同的编程语言。 当然，还有代码重用。</p>
+<p>在本文中，我们将讨论基于iOS Swift的项目中支持模块化代码库的选项，其中包括：</p>
+<ul>
+<li>librarys; </li>
+<li>框架，包括新的XCFramework bundle类型；<br>Swift软件包。<br>尽管仅限于iOS，但这并不意味着您不能在其他Apple平台上使用这些方法。<h3 id="基本"><a href="#基本" class="headerlink" title="基本"></a>基本</h3>Swift中基于<a target="_blank" rel="noopener" href="https://swift.org/package-manager/">模块</a>的代码组织和访问控制的概念。 该模块表示为单个代码分发单元。 在Xcode中将框架，库，快速包和构建目标视为单独的模块。 每个都有其命名空间和访问控制。 通常，模块可以解决特定问题。 它可以在不同情况下重用。</li>
+</ul>
+<p><strong><a target="_blank" rel="noopener" href="https://developer.apple.com/documentation/foundation/bundle">Bundle</a></strong> 是一个文件目录，其中包含子目录。 在iOS上，bundle包用于将相关文件方便地一起打包到一个包中，例如图像，nibs或编译后的代码。 系统将其视为一个文件，您可以在不知道其内部结构的情况下访问Bundle资源。 无法链接的Dylib，只能在运行时使用<code>dlopen()</code>打开</p>
+<p><strong>源文件</strong> 是模块中的单个Swift源代码文件。<br><strong>可执行文件</strong> 应用程序的主要二进制文件。<br><strong><a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Object_file#targetText=An%20object%20file%20is%20a,work%20like%20a%20shared%20library.">目标文件</a></strong> 目标文件是包含<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Object_code">目标代码</a>的文件，这意味着通常无法直接执行的可重定位格式的<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Machine_code">机器代码</a>。 目标文件也可以像<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Shared_library">共享库</a>一样工作。<br><strong><a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Object_code">目标代码</a></strong> 在计算中，目标代码或目标模块是编译器的产物。 在一般意义上，目标代码是计算机语言，通常是机器代码语言（即，二进制或中间语言，例如寄存器传送语言）中的一系列语句或指令。</p>
+<h3 id="Libraries"><a href="#Libraries" class="headerlink" title="Libraries"></a>Libraries</h3><p>在计算机科学中，库意味着将资源和代码收集到一个或多个体系结构中。 使用iOS应用程序时，您将面临静态和动态库。 让我们来看看它们是什么。<br><strong><a target="_blank" rel="noopener" href="https://developer.apple.com/library/archive/documentation/DeveloperTools/Conceptual/DynamicLibraries/100-Articles/OverviewOfDynamicLibraries.html">静态库</a></strong> (*.a) （<a target="_blank" rel="noopener" href="https://developer.apple.com/library/archive/documentation/DeveloperTools/Conceptual/DynamicLibraries/100-Articles/OverviewOfDynamicLibraries.html#//apple_ref/doc/uid/TP40001873-SW1">静态归档库</a>，<a target="_blank" rel="noopener" href="https://developer.apple.com/library/archive/documentation/DeveloperTools/Conceptual/DynamicLibraries/100-Articles/OverviewOfDynamicLibraries.html#//apple_ref/doc/uid/TP40001873-SW1">静态链接</a>的共享库）—目标文件的集合或归档。 静态链接器将带有库代码的应用程序编译的源代码收集到单个可执行文件中，该文件在运行时全部加载到内存中。<br><img src="/2021/05/01/Library-Difference/link_static_library_memory_usage.png" alt="Linking static library and memory usage"><br>由于静态库在一般意义上是机器代码语言中的一系列语句或指令，因此添加了一些限制来创建和分发它们：您需要为与客户端代码相同的处理器体系结构构建一个库。  。 例如，如果您正在为iOS应用程序使用库，则需要为iOS Simulator和iOS设备创建一个库。</p>
+<p>该库不能包含资源文件：图像，assets，nibs，字符串文件和其他可视数据。 如果要包括工程的这些资源，则这些资源将与.a文件分开。 通常，作为解决此问题的方法，所有方法都与另一个独立bundle包中提供的外部资源有关。</p>
+<p>您可以创建一个Swift静态库，这是Xcode 9.0支持的。 Xcode 9支持了动态框架。 使用CocoaPods的开发人员请记住，添加use_frameworks是必需的。 它告诉CocoaPods您想使用Frameworks而不是Static Libraries，因为Swift不支持它。 但是幸运的是，Swift和Xcode一直在不断改进，现在我们已经支持Swift静态库。</p>
+<p>静态库的格式在Windows下为.lib，在Linux或Mac下为.a。 整个静态库将被加载到目标文件中，并在编译期间保持静止。 静态库的好处是目标程序可以不受任何外部依赖地运行，即，您可以根据需要将此程序复制到其他系统。 但是缺点是它将使程序变大。</p>
+<p><strong>动态库</strong>  (*.dylib)（<a target="_blank" rel="noopener" href="https://developer.apple.com/library/archive/documentation/DeveloperTools/Conceptual/DynamicLibraries/100-Articles/OverviewOfDynamicLibraries.html#//apple_ref/doc/uid/TP40001873-SW1">动态共享库</a>，<a target="_blank" rel="noopener" href="https://developer.apple.com/library/archive/documentation/DeveloperTools/Conceptual/DynamicLibraries/100-Articles/OverviewOfDynamicLibraries.html#//apple_ref/doc/uid/TP40001873-SW1">共享对象</a>，<a target="_blank" rel="noopener" href="https://developer.apple.com/library/archive/documentation/DeveloperTools/Conceptual/DynamicLibraries/100-Articles/OverviewOfDynamicLibraries.html#//apple_ref/doc/uid/TP40001873-SW1">动态链接库</a>）不会像静态库一样复制到可执行文件中。 相反，当二进制文件和库都在内存中时，它们会在加载或运行时动态链接。 动态库分别存储和版本控制。 结果，如果更新被认为与原始版本二进制兼容，则动态库可能加载的内容与原始引用的内容不同。<br><img src="/2021/05/01/Library-Difference/link_dyld_memory_usage.png" alt="link_dyld_memory_usage"><br>系统iOS和macOS库是动态的。 这意味着您的应用将获得Apple更新的改进，而无需提交新的版本。 这也可能导致互操作性问题。 因此，在新版OS发行前测试该应用程序始终是个好主意。<br>关于iOS应用程序自己的自定义.dylib的创建和集成，有一些旧的讨论：<a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/48209855/xcode-9-no-option-to-create-dylib-project-ios">topic1</a>，<a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/4733847/can-you-build-dynamic-libraries-for-ios-and-load-them-at-runtime">topic2</a>。 尽管如此，<a target="_blank" rel="noopener" href="https://developer.apple.com/library/archive/technotes/tn2435/_index.html#//apple_ref/doc/uid/DTS40017543-CH1-PROJ_CONFIG-APPS_WITH_DEPENDENCIES_BETWEEN_FRAMEWORKS">Apple文件</a>清楚地指出：</p>
+<blockquote>
+<p>除了Xcode提供的系统Swift库外，iOS，watchOS或tvOS上不支持框架捆绑包之外的动态库（通常具有文件扩展名.dylib）。</p>
+</blockquote>
+<p>动态库（Windows下为.dll，Linux下为.so，而Mac下为.dylib / .tbd）将不会加载到目标程序中。目标程序仅在编译短语期间加载引用。 动态库将在运行时加载。<br>无需重新编译整个程序即可轻松升级Dynamic库</p>
+<h3 id="框架"><a href="#框架" class="headerlink" title="框架"></a>框架</h3><blockquote>
+<p>框架（.framework）：是一个分层目录，它将动态库，头文件和资源（例如storyboards，图像文件和本地化的字符串）封装到一个包中。 使用框架的应用程序需要将框架嵌入到应用程序包中。<br>旨在与静态和动态共享库相同的目的的框架。 但是与库不同，框架：</p>
+</blockquote>
+<ul>
+<li>可以包含图像，assets，文档，字符串文件之类的资源。</li>
+<li>仅将一个框架只读资源的副本加载到内存中，从而可以减少内存占用并在iOS应用程序和扩展之间共享框架。<br>关于框架和库之间的区别还有另一种观点，这是基于架构师和简洁设计的观点。 <a target="_blank" rel="noopener" href="https://martinfowler.com/">马丁·福勒（Martin Fowler）</a>在精彩的文章“<a target="_blank" rel="noopener" href="https://martinfowler.com/bliki/InversionOfControl.html">控制反转</a>”中说，控制反转是使框架与库不同的关键部分：</li>
+<li>该库本质上是可以调用的一组函数，这些天通常组织成类。 每个调用都会执行一些工作，并将控制权返回给客户端。</li>
+<li>框架体现了一些抽象设计，并内置了更多的行为。要使用它，您需要通过子类化或插入自己的类将行为插入框架中的不同位置。 然后，框架的代码将在这些位置调用您的代码。 程序的主控件被反转，从您移至框架。<br>在iOS 8之前，Apple不允许使用Dynamic Framework。 引入动态框架可能是因为Apple开始支持扩展的原因。 使用扩展程序，必须拥有与相应应用程序中使用的相同的框架。<br>iOS 8才开始支持的Dynamic 框架。</li>
+</ul>
+<p>在iOS中，Apple使用Framework打包头文件，源文件，二进制文件和资源。 同样，框架可以分为静态框架和动态框架。</p>
+<p>关于框架的讨论也值得一提的是伞形框架和通用框架（胖框架）：伞形框架：是包含其他框架的框架包。 伞框架可用于macOS应用程序，但Apple不建议使用它们。  iOS，watchOS或tvOS不支持伞框架。</p>
+<p>通用框架（fat框架）：多体系结构二进制文件，其中包含本机针对多个指令集的代码，并且可以在多种处理器类型上运行。 简而言之，它包含为您要支持的所有平台编译的代码。 例如，用于设备的x86_64（64位模拟器），arm64 arm64e armv7 armv7s。 结果，这样的框架将比一个架构的框架具有更大的规模。 有很多关于如何使用lipo制作通用框架的教程。 此方法广泛用于共享私有二进制文件。 这样，您的框架使用者就可以在真实的设备和模拟器上使用您的框架。</p>
+<p>您可以在终端中使用file命令获得框架：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">file &lt;PathToAppFramework&gt;/&lt;FrameworkName&gt;.framework/&lt;FrameworkName&gt;</span><br></pre></td></tr></table></figure>
+<p>要将所有动态链接的框架和库检查为二进制文件，可以使用otool：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">otool -L &lt;PathToArchive&gt;/Products/Applications/&lt;AppName&gt;.app/&lt;AppBinary&gt;</span><br></pre></td></tr></table></figure>
+<p>苹果表示，APP平均包含100-400个系统dylib。 系统框架的加载已高度优化。 但是加载自定义嵌入式框架可能会很昂贵。  Apple的工程师鼓励您明智地使用框架，并限制框架的使用量，因为这会影响应用程序的启动时间。 如果您对框架的工作原理及其对应用程序启动时间的影响感兴趣，请查看WWDC会话“<a target="_blank" rel="noopener" href="https://developer.apple.com/videos/play/wwdc2016/406/">优化应用程序启动时间</a>”。</p>
+<p>苹果公司宣布Swift 5为应用程序提供二进制兼容性，这意味着使用一个版本的Swift编译器构建的应用程序将能够与使用另一个版本的库进行通信。 目前，Swift的ABI已宣布在Apple平台上对Swift 5稳定。</p>
+<h3 id="XCFrameworks"><a href="#XCFrameworks" class="headerlink" title="XCFrameworks"></a>XCFrameworks</h3><p>XCFrameworks是一种新的受支持的分发二进制框架的方法，可从Xcode 11获得。实际上，该框架现在可以包含用于多个体系结构和平台的代码。 您仍然需要为不同的平台生成存档，并将它们捆绑在一起在单个XCFrameworks中。  WWDC 2019有一个很棒的会议：<a target="_blank" rel="noopener" href="https://developer.apple.com/videos/play/wwdc2019/416/">Swift中的二进制框架</a>，详细解释了如何创建，集成和分发XCFrameworks</p>
+<p>使用XCFrameworks的优点很少：</p>
+<ul>
+<li>XCFramework不仅包含针对设备和模拟器的变体，而且还包含针对Xcode支持的任何平台的变体：iOS，macOS，tvOS，watchOS； </li>
+<li>它支持Swift和基于C的代码； </li>
+<li>可以打包框架和静态库。<br>借助Xcode 12中的新软件包清单API，现在可以制作包含一个或多个XCFrameworks的Swift软件包。 您可以在官方文档以<a target="_blank" rel="noopener" href="https://developer.apple.com/documentation/swift_packages/distributing_binary_frameworks_as_swift_packages">Swift软件包分发二进制框架</a>和<a target="_blank" rel="noopener" href="https://developer.apple.com/videos/play/wwdc2020/10147/">WWDC 2020视频</a>中找到实现的详细信息。<h3 id="Swift-Package"><a href="#Swift-Package" class="headerlink" title="Swift Package"></a>Swift Package</h3>Swift是一种跨平台语言，需要用于构建Swift代码的跨平台工具。  <a target="_blank" rel="noopener" href="https://swift.org/package-manager/#targetText=The%20Swift%20Package%20Manager%20is,in%20Swift%203.0%20and%20above.">Swift软件包管理器</a>（SwiftPM）的目标之一是简化Swift生态系统中的分发源代码。  SwiftPM是一个开源项目，您也可以在<a target="_blank" rel="noopener" href="https://github.com/apple/swift-package-manager">GitHub</a>上找到有关它的信息。<br>Swift Package包含源文件和清单文件（Package.swift）。 清单描述了Swift软件包的配置。  Swift Package是由<a target="_blank" rel="noopener" href="https://swift.org/package-manager/">Swift Package Manager</a>定义和使用的，其中包括<a target="_blank" rel="noopener" href="https://swift.org/package-manager/">Swift 3.0及更高版本</a>。 由于以源代码形式分发，因此不再需要维护客户端的二进制兼容性。 因此，如果您可以交付源代码，那么Swift Package是您的理想工具。 借助Xcode 11中的新更改，您可以轻松创建和分发Swift软件包。</li>
+</ul>
+<p>Swift软件包包括3个部分：依赖项，目标和产品：</p>
+<p>__依赖关系__：您在包内部使用的其他swift包。 在软件包文件中，每个依赖项都由源位置和版本指定。</p>
+<p>__目标__：如Apple的文档所述，<a target="_blank" rel="noopener" href="https://developer.apple.com/documentation/xcode/creating_a_swift_package_with_xcode">目标是包的基本组成部分</a>。既可以是库，也可以是可执行文件。 在Xcode 12 Swift软件包之前，只能包含Swift，Objective-C / C ++或C / C ++文件。  Xcode 12提供了新的tools-version：5.3，它带来了新的包清单API。 现在，Swift包可以包含其他资源类型：图像，storyboards，JSON文件，Shell脚本等等。 您还可以本地化这些资源。 这是很棒的，希望得到改进。 感谢所有为提供此功能做出贡献的人。 有用的详细信息和实现详细信息，可以在WWDC 2020视频Swift包中找到：<a target="_blank" rel="noopener" href="https://developer.apple.com/videos/play/wwdc2020/10169/">资源和本地化</a>，以及在文档<a target="_blank" rel="noopener" href="https://developer.apple.com/documentation/swift_packages/localizing_package_resources">Localizing Package Resources</a>中。</p>
+<p>__产品__：软件包的输出，可以是软件包产生的库或可执行文件，并使它们对其他软件包可见。</p>
+<p>下面是Swift软件包的优缺点:<br>优点：</p>
+<ul>
+<li>1.由Xcode管理的依赖关系； </li>
+<li>2.由Xcode管理的版本； </li>
+<li>3.无需二进制兼容性，可以在同一构建操作中针对多个平台编译软件包。 不再需要为每个平台创建单独的框架目标。 </li>
+<li>4.源代码形式的分发允许检查代码并在调试时介入其中。</li>
+<li>5.查看Xcode 12 Swift软件包可以包含图像，storyboards，XCFrameworks和更多其他文件类型。</li>
+</ul>
+<p>缺点：</p>
+<ul>
+<li>1.（仅在Xcode 12之前）Swift软件包包含源代码，但不支持资产和资源。</li>
+<li>2.（仅在Xcode 12之前）Swift程序包只能依赖于其他Swift程序包，不支持二进制依赖性。</li>
+<li>3.源代码形式的分发不适用于不想共享源代码的框架提供程序。<br>显然，在为iOS应用程序选择静态库，框架或Swift包之间的体系结构时，应考虑每个特定项目的局限性。</li>
+</ul>
+<p>将太多的静态库链接到应用程序中会产生较大的应用程序可执行文件，启动时间较慢，并且内存占用量很大。 与静态库相比，框架可以为您提供更多的灵活性，它们可以包含资源。 但是，添加到项目中的每个嵌入式框架也会增加启动时间。<br>如果您可以发送源文件，则Swift软件包可能是您的正确选择。  Xcode将处理所有依赖项，版本控制和平台。</p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>库是一个已编译的库文件，通常为二进制格式。 其他用户可以直接将其与一个或多个头文件一起使用。<br>库有两种类型：</p>
+<ul>
+<li>1.静态库</li>
+<li>静态链接。 相关代码和地址将立即加载到主程序中。</li>
+<li>它将使程序大小变大。</li>
+<li>2.动态库</li>
+<li>动态链接。 相关代码和地址将被计算，然后加载到主程序中。 此计算将有额外的时间。</li>
+<li>与静态库相比，动态库可以由一个副本用于多个程序。不会使程序大小变大。无需重新编译整个程序即可轻松升级Dynamic库</li>
+<li>缺点1:动态库/库上的额外编译时间</li>
+<li>缺点2:当您尝试将程序复制到其他系统但忘记了动态库时，很容易得到诸如在Linux下的“找不到库”之类的错误</li>
+</ul>
+
+      
+    </div>
+
+  </div>
+
+  <div class="article-footer">
+    <div class="article-meta pull-left">
+
+    
+
+    
+    
+
+    <span class="post-tags">
+      <i class="icon-tags"></i>
+        <a href="/tags/iOS/">iOS</a>
+    </span>
+    
+
+    </div>
+
+    
+  </div>
+</article>
+
+  
+
+
+
+
+
+
+    </main>
+
+    <footer class="site-footer">
+  <p class="site-info">
+    Proudly powered by <a href="https://hexo.io/" target="_blank">Hexo</a> and
+    Theme by <a href="https://github.com/CodeDaraW/Hacker" target="_blank">Hacker</a>
+    </br>
+    
+    &copy; 2021 Rick Li
+    
+  </p>
+</footer>
+    
+    
+  </div>
+</div>
+</body>
+</html>
